@@ -119,12 +119,12 @@
         <tbody>
           {% for inc in incidents %}
           <tr>
-            <td>{{ loop.index }}</td>
+            <td>{{ loop.revindex }}</td>
             <td>{{ inc.id }}</td>
             <td>{{ inc.start_ts }}</td>
             <td>{{ inc.end_ts if inc.end_ts else '—' }}</td>
-            <td>{% if inc.last_status.value == 'UP' %}Доступен{% elif inc.last_status.value == 'DOWN' %}Недоступен{% else %}{{ inc.last_status.value }}{% endif %}</td>
-            <td>{{ 'Yes' if inc.resolved else 'No' }}</td>
+            <td>{% if inc.last_status == 'UP' %}Доступен{% elif inc.last_status == 'DOWN' %}Недоступен{% else %}{{ inc.last_status }}{% endif %}</td>
+            <td>{{ 'Да' if inc.resolved else 'Нет' }}</td>
           </tr>
           {% endfor %}
           {% if incidents|length == 0 %}

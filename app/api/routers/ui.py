@@ -9,6 +9,7 @@ from starlette.templating import Jinja2Templates
 
 from app.api.dependencies import get_db_session
 from app.services.incidents import IncidentService
+from datetime import timezone, timedelta
 from app.services.metrics import MetricsService
 from app.services.sites import SiteService
 from app.services.status_history import StatusHistoryService
@@ -64,6 +65,20 @@ async def site_detail(
     metrics = await metrics_service.uptime_window(site_id, window_hours=24)
     incidents = await incident_service.list(site_id, limit=100)
 
+    # format incident timestamps to human-readable strings in UTC+3
+    tz_msk = timezone(timedelta(hours=3))
+    incidents_serialized = []
+    for inc in incidents:
+        start_ts = inc.start_ts.astimezone(tz_msk).strftime("%Y-%m-%d %H:%M:%S") if inc.start_ts is not None else None
+        end_ts = inc.end_ts.astimezone(tz_msk).strftime("%Y-%m-%d %H:%M:%S") if inc.end_ts is not None else None
+        incidents_serialized.append({
+            "id": inc.id,
+            "start_ts": start_ts,
+            "end_ts": end_ts,
+            "last_status": inc.last_status.value,
+            "resolved": inc.resolved,
+        })
+
     return templates.TemplateResponse(
         "site_detail.html",
         {
@@ -71,7 +86,7 @@ async def site_detail(
             "site": site,
             "latest": latest,
             "metrics": metrics,
-            "incidents": incidents,
+            "incidents": incidents_serialized,
         },
     )
 
