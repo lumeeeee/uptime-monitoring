@@ -3,6 +3,8 @@ from __future__ import annotations
 import uuid
 import csv
 import io
+import os
+import logging
 from datetime import timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -212,21 +214,50 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
     pdf = FPDF(format='A4')
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
-    pdf.set_font('Helvetica', 'B', 16)
-    pdf.cell(0, 10, 'Отчет по метрикам', ln=1)
+
+    # Try to register a TTF font that supports Cyrillic (common locations)
+    font_registered = False
+    font_paths = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/dejavu/DejaVuSans.ttf',
+        'C:\\Windows\\Fonts\\DejaVuSans.ttf',
+        'C:\\Windows\\Fonts\\arial.ttf',
+    ]
+    for p in font_paths:
+        if os.path.exists(p):
+            try:
+                pdf.add_font('DejaVu', '', p, uni=True)
+                pdf.set_font('DejaVu', '', 12)
+                font_registered = True
+                break
+            except Exception:
+                logging.exception('Failed to register font %s', p)
+
+    # If no font capable of Cyrillic was found, fall back to an ASCII-safe layout
+    if font_registered:
+        title_text = 'Отчет по метрикам'
+        header_labels = ['Сайт', 'URL', 'Доступность 24ч %', 'Uptime (с)', 'Downtime (с)', 'SLA %', 'SLA', 'Ошибки %']
+    else:
+        pdf.set_font('Helvetica', 'B', 16)
+        title_text = 'Metrics Report'
+        header_labels = ['Site', 'URL', 'Availability 24h %', 'Uptime (s)', 'Downtime (s)', 'SLA %', 'SLA', 'Errors %']
+
+    # Title
+    pdf.set_font(pdf.font_family, 'B', 16)
+    pdf.cell(0, 10, title_text, ln=1)
     pdf.ln(4)
 
     # Table header
-    pdf.set_font('Helvetica', 'B', 10)
+    pdf.set_font(pdf.font_family, 'B', 10)
     col_widths = [40, 60, 24, 22, 22, 18, 14, 20]
-    headers = ['Сайт', 'URL', 'Доступность 24ч %', 'Uptime (с)', 'Downtime (с)', 'SLA %', 'SLA', 'Ошибки %']
     pdf.set_fill_color(14, 165, 233)
-    for w, h in zip(col_widths, headers):
-        pdf.cell(w, 8, h, border=1, fill=True)
+    for w, label in zip(col_widths, header_labels):
+        pdf.cell(w, 8, label, border=1, fill=True)
     pdf.ln()
 
     # Table rows
-    pdf.set_font('Helvetica', '', 9)
+    pdf.set_font(pdf.font_family, '', 9)
     for row in data['rows']:
         vals = [
             str(row.get('name', ''))[:30],
@@ -235,14 +266,41 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
             str(row.get('uptime_seconds', '')),
             str(row.get('downtime_seconds', '')),
             f"{row['sla_target_pct']:.1f}" if row.get('sla_target_pct') is not None else '',
-            'Да' if row.get('sla_met') else 'Нет',
+            ('Да' if row.get('sla_met') else 'Нет') if font_registered else ('Yes' if row.get('sla_met') else 'No'),
             f"{row['error_rate_pct']:.2f}",
         ]
+        # Use multi_cell without unexpected kwargs; write each cell and move cursor accordingly
+        x_start = pdf.get_x()
+        y_start = pdf.get_y()
+        max_h = 0
+        # First pass: compute height for the tallest cell in the row
+        heights = []
         for w, v in zip(col_widths, vals):
-            pdf.multi_cell(w, 6, v, border=1, ln=3)
-        pdf.ln()
+            # estimate height by writing to a buffer page (multi_cell will wrap)
+            # fpdf2 doesn't provide a direct measurement API; use a simple approximation
+            lines = pdf.multi_cell(w, 6, v, border=0, split_only=True)
+            h = len(lines) * 6
+            heights.append(h)
+            if h > max_h:
+                max_h = h
 
-    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+        # Second pass: actually draw the cells with borders, using the computed max height
+        for w, v, h in zip(col_widths, vals, heights):
+            pdf.multi_cell(w, 6, v, border=1)
+            x = pdf.get_x()
+            y = pdf.get_y()
+            # move to the right of the cell for the next column
+            pdf.set_xy(x + (w if x == 0 else 0), y_start)
+        pdf.set_xy(x_start, y_start + max_h)
+
+    try:
+        pdf_output = pdf.output(dest='S')
+        # pdf_output is a string of binary data; encode to bytes safely
+        pdf_bytes = pdf_output.encode('latin-1', errors='ignore')
+    except Exception:
+        logging.exception('Failed to generate PDF output')
+        raise HTTPException(status_code=500, detail='Failed to generate PDF')
+
     buffer = io.BytesIO(pdf_bytes)
     headers = {"Content-Disposition": "attachment; filename=metrics.pdf"}
     return StreamingResponse(buffer, media_type="application/pdf", headers=headers)
