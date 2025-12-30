@@ -212,19 +212,20 @@ async def metrics_csv(session: AsyncSession = Depends(get_db_session)) -> Stream
 async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> StreamingResponse:
     data = await _collect_metrics(session)
 
-    def humanize_seconds(seconds: float | int | None) -> str:
+    def humanize_seconds(seconds: float | int | None, use_cyrillic: bool) -> str:
         if seconds is None:
             return ""
         seconds = int(seconds)
         days, rem = divmod(seconds, 86400)
         hours, rem = divmod(rem, 3600)
         minutes, _ = divmod(rem, 60)
+        day_suf, hour_suf, min_suf = ("д", "ч", "м") if use_cyrillic else ("d", "h", "m")
         parts = []
         if days:
-            parts.append(f"{days}д")
+            parts.append(f"{days}{day_suf}")
         if hours:
-            parts.append(f"{hours}ч")
-        parts.append(f"{minutes}м")
+            parts.append(f"{hours}{hour_suf}")
+        parts.append(f"{minutes}{min_suf}")
         return " ".join(parts)
 
     def safe_text(text: str) -> str:
@@ -287,11 +288,11 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
     # If no font capable of Cyrillic was found, fall back to an ASCII-safe layout
     if font_registered:
         title_text = 'Отчет по метрикам'
-        header_labels = ['Сайт', 'URL', 'Доступность 24ч %', 'Uptime (с)', 'Downtime (с)', 'SLA %', 'SLA', 'Ошибки %']
+        header_labels = ['Сайт', 'URL', 'Доступность 24ч %', 'Uptime', 'Downtime', 'SLA %', 'SLA', 'Ошибки %']
     else:
         pdf.set_font('Helvetica', 'B', 16)
         title_text = 'Metrics Report'
-        header_labels = ['Site', 'URL', 'Availability 24h %', 'Uptime (s)', 'Downtime (s)', 'SLA %', 'SLA', 'Errors %']
+        header_labels = ['Site', 'URL', 'Availability 24h %', 'Uptime', 'Downtime', 'SLA %', 'SLA', 'Errors %']
 
     # Title
     font_name = 'DejaVu' if font_registered else 'Helvetica'
@@ -317,13 +318,14 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
     # Table rows with basic wrapping using fpdf2 new_x/new_y to avoid overlap
     pdf.set_font(font_name, '', 9)
     line_height = 6
+    use_cyr = font_registered
     for row in data['rows']:
         vals = [
             safe_text(str(row.get('name', ''))),
             safe_text(str(row.get('url', ''))),
             f"{row['availability_pct']:.2f}" if row.get('availability_pct') is not None else '',
-            humanize_seconds(row.get('uptime_seconds')),
-            humanize_seconds(row.get('downtime_seconds')),
+            safe_text(humanize_seconds(row.get('uptime_seconds'), use_cyr)),
+            safe_text(humanize_seconds(row.get('downtime_seconds'), use_cyr)),
             f"{row['sla_target_pct']:.1f}" if row.get('sla_target_pct') is not None else '',
             ('Да' if row.get('sla_met') else 'Нет') if font_registered else ('Yes' if row.get('sla_met') else 'No'),
             f"{row['error_rate_pct']:.2f}",
