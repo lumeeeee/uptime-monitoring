@@ -120,4 +120,5 @@ async def admin_add_site(
         retry_backoff_ms=retry_backoff_ms,
         sla_target=sla_target,
     )
+    await session.commit()
     return RedirectResponse(url="/admin/sites", status_code=status.HTTP_302_FOUND)
