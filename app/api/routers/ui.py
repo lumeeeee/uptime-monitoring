@@ -9,9 +9,10 @@ from datetime import timezone, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.responses import HTMLResponse, StreamingResponse
+from starlette.responses import HTMLResponse, StreamingResponse, FileResponse
 from starlette.templating import Jinja2Templates
 from fpdf import FPDF
+import tempfile
 
 from app.api.dependencies import get_db_session
 from app.services.incidents import IncidentService
@@ -286,10 +287,14 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
         logging.exception('Failed to generate PDF output')
         raise HTTPException(status_code=500, detail='Failed to generate PDF')
 
-    buffer = io.BytesIO(pdf_bytes)
-    buffer.seek(0)
-    headers = {
-        "Content-Disposition": "attachment; filename=metrics.pdf",
-        "Content-Length": str(len(pdf_bytes)),
-    }
-    return StreamingResponse(buffer, media_type="application/pdf", headers=headers)
+    # Write to a temporary file and return using FileResponse to ensure correct binary transfer
+    try:
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        tmp_name = tmp.name
+        tmp.close()
+        with open(tmp_name, 'wb') as f:
+            f.write(pdf_bytes)
+        return FileResponse(tmp_name, media_type='application/pdf', filename='metrics.pdf')
+    except Exception:
+        logging.exception('Failed to write temporary PDF file')
+        raise HTTPException(status_code=500, detail='Failed to generate PDF')
