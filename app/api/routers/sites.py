@@ -61,7 +61,10 @@ async def update_site(
 
 
 @router.delete(
-    "/{site_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response
+    "/{site_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
 )
 async def delete_site(
     site_id: uuid.UUID,
