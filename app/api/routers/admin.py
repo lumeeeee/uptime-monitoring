@@ -3,6 +3,7 @@ from __future__ import annotations
 import hmac
 import hashlib
 from datetime import timedelta, datetime, timezone
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
@@ -121,4 +122,18 @@ async def admin_add_site(
         sla_target=sla_target,
     )
     await session.commit()
+    return RedirectResponse(url="/admin/sites", status_code=status.HTTP_302_FOUND)
+
+
+@router.post("/sites/{site_id}/delete")
+async def admin_delete_site(
+    site_id: uuid.UUID,
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+    user=Depends(require_admin),
+):
+    svc = SiteService(session)
+    deleted = await svc.delete(site_id)
+    if deleted:
+        await session.commit()
     return RedirectResponse(url="/admin/sites", status_code=status.HTTP_302_FOUND)

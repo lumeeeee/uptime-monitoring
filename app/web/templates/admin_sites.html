@@ -70,6 +70,7 @@
           <th>Name</th>
           <th>URL</th>
           <th>Active</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -78,6 +79,11 @@
           <td>{{ s.name }}</td>
           <td><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.url }}</a></td>
           <td>{% if s.is_active %}<span class="pill pill-up">Yes</span>{% else %}<span class="pill pill-inactive">No</span>{% endif %}</td>
+          <td>
+            <form method="post" action="/admin/sites/{{ s.id }}/delete" onsubmit="return confirm('Remove site from monitoring?');" style="display:inline">
+              <button type="submit" style="background:#e53e3e;border:none;color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer;">Delete</button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
         {% if sites|length == 0 %}
