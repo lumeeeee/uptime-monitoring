@@ -9,10 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import HTMLResponse, StreamingResponse
 from starlette.templating import Jinja2Templates
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from fpdf import FPDF
 
 from app.api.dependencies import get_db_session
 from app.services.incidents import IncidentService
@@ -211,50 +208,41 @@ async def metrics_csv(session: AsyncSession = Depends(get_db_session)) -> Stream
 @router.get("/metrics.pdf")
 async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> StreamingResponse:
     data = await _collect_metrics(session)
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, title="Uptime Metrics Report")
-    styles = getSampleStyleSheet()
 
-    elements = [Paragraph("Отчет по метрикам", styles["Title"]), Spacer(1, 12)]
+    pdf = FPDF(format='A4')
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font('Helvetica', 'B', 16)
+    pdf.cell(0, 10, 'Отчет по метрикам', ln=1)
+    pdf.ln(4)
 
-    table_data = [[
-        "Сайт",
-        "URL",
-        "Доступность 24ч %",
-        "Uptime (с)",
-        "Downtime (с)",
-        "SLA %",
-        "SLA ОК",
-        "Ошибки %",
-    ]]
+    # Table header
+    pdf.set_font('Helvetica', 'B', 10)
+    col_widths = [40, 60, 24, 22, 22, 18, 14, 20]
+    headers = ['Сайт', 'URL', 'Доступность 24ч %', 'Uptime (с)', 'Downtime (с)', 'SLA %', 'SLA', 'Ошибки %']
+    pdf.set_fill_color(14, 165, 233)
+    for w, h in zip(col_widths, headers):
+        pdf.cell(w, 8, h, border=1, fill=True)
+    pdf.ln()
 
-    for row in data["rows"]:
-        table_data.append([
-            row["name"],
-            row["url"],
-            f"{row['availability_pct']:.2f}" if row["availability_pct"] is not None else "",
-            row.get("uptime_seconds", ""),
-            row.get("downtime_seconds", ""),
-            f"{row['sla_target_pct']:.1f}" if row.get("sla_target_pct") is not None else "",
-            "Да" if row.get("sla_met") else "Нет",
+    # Table rows
+    pdf.set_font('Helvetica', '', 9)
+    for row in data['rows']:
+        vals = [
+            str(row.get('name', ''))[:30],
+            str(row.get('url', ''))[:60],
+            f"{row['availability_pct']:.2f}" if row.get('availability_pct') is not None else '',
+            str(row.get('uptime_seconds', '')),
+            str(row.get('downtime_seconds', '')),
+            f"{row['sla_target_pct']:.1f}" if row.get('sla_target_pct') is not None else '',
+            'Да' if row.get('sla_met') else 'Нет',
             f"{row['error_rate_pct']:.2f}",
-        ])
+        ]
+        for w, v in zip(col_widths, vals):
+            pdf.multi_cell(w, 6, v, border=1, ln=3)
+        pdf.ln()
 
-    table = Table(table_data, repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0ea5e9")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 10),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#0b1220")),
-        ("TEXTCOLOR", (0, 1), (-1, -1), colors.whitesmoke),
-        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#1f2937")),
-    ]))
-
-    elements.append(table)
-    doc.build(elements)
-    buffer.seek(0)
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    buffer = io.BytesIO(pdf_bytes)
     headers = {"Content-Disposition": "attachment; filename=metrics.pdf"}
     return StreamingResponse(buffer, media_type="application/pdf", headers=headers)
