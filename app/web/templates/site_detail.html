@@ -4,25 +4,47 @@
   <meta charset="UTF-8" />
   <title>{{ site.name }} - Details</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 24px; background: #f7f9fb; color: #1f2933; }
-    a { color: #2563eb; text-decoration: none; }
+    :root{
+      --bg: #f7f9fb;
+      --panel-bg: #ffffff;
+      --text: #1f2933;
+      --muted: #475569;
+      --accent: #2563eb;
+      --up: #0b8a3c;
+      --down: #c0392b;
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .theme-dark{
+      --bg: #0b1220;
+      --panel-bg: #071124;
+      --text: #e6eef8;
+      --muted: #a6b8d6;
+      --accent: #60a5fa;
+      --up: #34d399;
+      --down: #fb7185;
+      --card-shadow: 0 2px 8px rgba(2,6,23,0.6);
+    }
+    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); }
+    a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .section { margin-bottom: 24px; background: #fff; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .status-up { color: #0b8a3c; font-weight: 700; }
-    .status-down { color: #c0392b; font-weight: 700; }
+    .section { margin-bottom: 24px; background: var(--panel-bg); padding: 16px; box-shadow: var(--card-shadow); }
+    .status-up { color: var(--up); font-weight: 700; }
+    .status-down { color: var(--down); font-weight: 700; }
     .pill { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
-    .pill-up { background: #e6f6ec; color: #0b8a3c; }
-    .pill-down { background: #fdecea; color: #c0392b; }
-    .pill-na { background: #f1f5f9; color: #475569; }
+    .pill-up { background: rgba(52,211,153,0.12); color: var(--up); }
+    .pill-down { background: rgba(251,113,133,0.12); color: var(--down); }
+    .pill-na { background: rgba(255,255,255,0.02); color: var(--muted); }
     table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
-    th { background: #eef2f7; font-weight: 600; font-size: 14px; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); text-align: left; }
+    th { background: rgba(255,255,255,0.02); font-weight: 600; font-size: 14px; }
     tr:last-child td { border-bottom: none; }
+    .theme-toggle { float: right; background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--text); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="section">
     <a href="/ui">← Back to dashboard</a>
+    <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
     <h2>{{ site.name }}</h2>
     <p><strong>URL:</strong> <a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></p>
     <p><strong>Status:</strong>
@@ -75,5 +97,28 @@
       </tbody>
     </table>
   </div>
+  <script>
+    (function(){
+      const key = 'uptime-theme';
+      const btn = document.getElementById('theme-toggle');
+      function apply(theme){
+        if(theme === 'dark') document.documentElement.classList.add('theme-dark');
+        else document.documentElement.classList.remove('theme-dark');
+        if(btn){
+          btn.setAttribute('aria-pressed', theme === 'dark');
+          btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+      }
+      const stored = localStorage.getItem(key) || 'light';
+      apply(stored);
+      if(btn){
+        btn.addEventListener('click', ()=>{
+          const next = (localStorage.getItem(key) || 'light') === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(key, next);
+          apply(next);
+        });
+      }
+    })();
+  </script>
 </body>
 </html>
