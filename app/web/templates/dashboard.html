@@ -25,6 +25,7 @@
     }
     .theme-dark{ /* keep variables symmetrical for toggle */ }
     body { margin:0; padding:32px; padding-left: 32px; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), transparent 30%), radial-gradient(circle at 80% 0%, rgba(14,165,233,0.08), transparent 26%), var(--bg); color: var(--text); font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif; transition: padding-left .2s ease; }
+    body.sidebar-open { padding-left: calc(var(--sidebar-w) + 32px); }
     .page { max-width: 1200px; margin: 0 auto; }
     .sidebar { position: fixed; inset:0 auto 0 0; width: var(--sidebar-w); background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(11,18,32,0.98)); border-right:1px solid var(--sidebar-border); padding:24px 18px; box-shadow: 6px 0 30px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:16px; z-index:50; transform: translateX(-100%); transition: transform .25s ease; }
     .sidebar .logo { font-weight:700; letter-spacing:-0.01em; display:flex; align-items:center; gap:10px; font-size:16px; }
