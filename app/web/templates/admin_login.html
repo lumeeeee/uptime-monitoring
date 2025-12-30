@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Login</title>
+  <style>
+    :root{
+      --bg: #f7f9fb;
+      --panel-bg: #ffffff;
+      --text: #1f2933;
+      --muted: #475569;
+      --accent: #2563eb;
+      --card-border: #000000;
+      --card-accent: rgba(37,99,235,0.18);
+    }
+    .theme-dark{
+      --bg: #0b1220;
+      --panel-bg: #071124;
+      --text: #e6eef8;
+      --muted: #a6b8d6;
+      --accent: #60a5fa;
+      --card-border: #000000;
+      --card-accent: rgba(96,165,250,0.20);
+    }
+    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 90vh; }
+    .shell { width: 420px; background: linear-gradient(180deg, var(--panel-bg), rgba(255,255,255,0.02)); border-radius: 14px; border: 2px solid var(--card-border); padding: 22px; box-shadow: 0 12px 30px rgba(2,6,23,0.18); position: relative; overflow: hidden; }
+    .shell::before{ content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--card-accent), transparent); pointer-events: none; }
+    h2 { margin: 0 0 4px 0; }
+    p { margin: 0 0 12px 0; color: var(--muted); }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); font-size: 14px; background: rgba(255,255,255,0.9); color: var(--text); }
+    .theme-dark input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: var(--text); }
+    button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 8px 22px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .12s ease; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(37,99,235,0.35); }
+    .error { background: rgba(192,57,43,0.12); color: #c0392b; border: 1px solid rgba(192,57,43,0.4); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .theme-toggle { background: transparent; border: 1px solid rgba(0,0,0,0.08); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+    .links { display: flex; justify-content: space-between; margin-top: 12px; font-size: 14px; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header">
+      <h2>Admin login</h2>
+      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
+    </div>
+    <p>Sign in with the admin credentials configured via env vars.</p>
+    {% if error %}<div class="error">Invalid username or password.</div>{% endif %}
+    <form method="post" action="/admin/login">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required />
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" autocomplete="current-password" required />
+      <button type="submit">Sign in</button>
+    </form>
+    <div class="links">
+      <span>Need creds? Set ADMIN_USERNAME / ADMIN_PASSWORD.</span>
+      <a href="/ui">Back to dashboard</a>
+    </div>
+  </div>
+  <script>
+    (function(){
+      const key = 'uptime-theme';
+      const btn = document.getElementById('theme-toggle');
+      function apply(theme){
+        if(theme === 'dark') document.documentElement.classList.add('theme-dark');
+        else document.documentElement.classList.remove('theme-dark');
+        if(btn){
+          btn.setAttribute('aria-pressed', theme === 'dark');
+          btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+      }
+      const stored = localStorage.getItem(key) || 'light';
+      apply(stored);
+      if(btn){
+        btn.addEventListener('click', ()=>{
+          const next = (localStorage.getItem(key) || 'light') === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(key, next);
+          apply(next);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

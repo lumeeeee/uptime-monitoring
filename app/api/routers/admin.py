@@ -7,6 +7,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
+from starlette.responses import HTMLResponse
+from starlette.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db_session
@@ -14,6 +16,7 @@ from app.core.config import settings
 from app.services.sites import SiteService
 
 router = APIRouter(prefix="/admin", tags=["admin"], include_in_schema=False)
+templates = Jinja2Templates(directory="app/web/templates")
 
 COOKIE_NAME = "uptime_admin"
 COOKIE_MAX_AGE = 60 * 60 * 8  # 8 hours
@@ -59,23 +62,9 @@ def require_admin(request: Request) -> str:
     return username
 
 
-@router.get("/login")
+@router.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request):
-    return Response(
-        content=(
-            """
-            <html><body>
-            <h2>Admin login</h2>
-            <form method='post'>
-              <input name='username' placeholder='Username'/><br/>
-              <input type='password' name='password' placeholder='Password'/><br/>
-              <button type='submit'>Login</button>
-            </form>
-            </body></html>
-            """
-        ),
-        media_type="text/html",
-    )
+    return templates.TemplateResponse("admin_login.html", {"request": request, "error": False})
 
 
 @router.post("/login")
@@ -84,7 +73,11 @@ async def login(request: Request, username: str = Form(...), password: str = For
         resp = RedirectResponse(url="/admin/sites", status_code=status.HTTP_302_FOUND)
         _set_auth_cookie(resp, username)
         return resp
-    return Response(content="Unauthorized", status_code=status.HTTP_401_UNAUTHORIZED)
+    return templates.TemplateResponse(
+        "admin_login.html",
+        {"request": request, "error": True},
+        status_code=status.HTTP_401_UNAUTHORIZED,
+    )
 
 
 @router.get("/logout")
@@ -94,38 +87,13 @@ async def logout():
     return resp
 
 
-@router.get("/sites")
+@router.get("/sites", response_class=HTMLResponse)
 async def admin_sites(request: Request, session: AsyncSession = Depends(get_db_session), user=Depends(require_admin)):
     svc = SiteService(session)
     sites = await svc.list(limit=500)
-    rows = "".join(
-        f"<tr><td>{s.name}</td><td>{s.url}</td><td>{'Yes' if s.is_active else 'No'}</td></tr>" for s in sites
-    )
-    return Response(
-        content=(
-            f"""
-            <html><body>
-            <div style='float:right'><a href='/admin/logout'>Logout</a></div>
-            <h2>Sites</h2>
-            <table border='1' cellpadding='6' cellspacing='0'>
-              <tr><th>Name</th><th>URL</th><th>Active</th></tr>
-              {rows or '<tr><td colspan="3">No sites</td></tr>'}
-            </table>
-            <h3>Add site</h3>
-            <form method='post' action='/admin/sites'>
-              <input name='name' placeholder='Name' required/>
-              <input name='url' placeholder='https://example.com' required/>
-              <input name='check_interval_sec' type='number' min='5' value='60' required/>
-              <input name='timeout_ms' type='number' min='1000' value='5000' required/>
-              <input name='retry_count' type='number' min='0' value='1' required/>
-              <input name='retry_backoff_ms' type='number' min='0' value='500' required/>
-              <input name='sla_target' type='number' min='0' max='100' value='99' />
-              <button type='submit'>Add</button>
-            </form>
-            </body></html>
-            """
-        ),
-        media_type="text/html",
+    return templates.TemplateResponse(
+        "admin_sites.html",
+        {"request": request, "sites": sites, "username": user},
     )
 
 
