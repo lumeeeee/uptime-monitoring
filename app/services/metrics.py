@@ -66,6 +66,33 @@ class MetricsService:
             if check.checked_at < current_ts:
                 continue
             delta = (check.checked_at - current_ts).total_seconds()
+        # Determine starting status and timestamp for the window.
+        # If we have a previous check (before window), use it as baseline and start from window_start.
+        # If we don't have a previous check but there are checks inside the window,
+        # start from the first observed check (don't count the unknown period before it).
+        if previous is not None:
+            current_status = previous.status
+            current_ts = window_start
+            start_index = 0
+        else:
+            if checks:
+                # Start from the first observed check; do not attribute time before it.
+                current_status = checks[0].status
+                current_ts = checks[0].checked_at
+                start_index = 1
+            else:
+                # No data at all in window; fall back to configured assumption.
+                current_status = Status.DOWN if assume_unknown_as_down else Status.UP
+                current_ts = window_start
+                start_index = 0
+
+        uptime_seconds = 0.0
+        downtime_seconds = 0.0
+
+        for check in checks[start_index:]:
+            if check.checked_at < current_ts:
+                continue
+            delta = (check.checked_at - current_ts).total_seconds()
             if delta > 0:
                 if current_status == Status.UP:
                     uptime_seconds += delta
@@ -73,16 +100,6 @@ class MetricsService:
                     downtime_seconds += delta
             current_status = check.status
             current_ts = check.checked_at
-
-        tail = (now - current_ts).total_seconds()
-        if tail > 0:
-            if current_status == Status.UP:
-                uptime_seconds += tail
-            else:
-                downtime_seconds += tail
-
-        total = uptime_seconds + downtime_seconds
-        availability = uptime_seconds / total if total > 0 else None
 
         sla_met = None
         if sla_target_per_mille is not None and availability is not None:
