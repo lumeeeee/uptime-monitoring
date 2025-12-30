@@ -63,11 +63,19 @@
         <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
       </div>
     </div>
+
+    <div class="row">
+      <div class="box">
+        <h3 style="margin:0;">Error rate (last 100 checks)</h3>
+        <div class="chart-holder"><canvas id="errorChart" width="600" height="360"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <script>
     const labels = {{ labels | tojson }};
     const uptimeValues = {{ uptime_values | tojson }};
+    const errorRates = {{ error_rates | tojson }};
     const latencySeries = {{ latency_series | tojson }};
 
     Chart.defaults.responsive = true;
@@ -81,6 +89,21 @@
           label: 'Uptime % (24h)',
           data: uptimeValues,
           backgroundColor: 'rgba(56,189,248,0.6)',
+          borderRadius: 8,
+        }]
+      },
+      options: {responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true, max:100}}}
+    });
+
+    const errCtx = document.getElementById('errorChart').getContext('2d');
+    new Chart(errCtx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Error rate % (last 100 checks)',
+          data: errorRates,
+          backgroundColor: 'rgba(248,113,113,0.7)',
           borderRadius: 8,
         }]
       },

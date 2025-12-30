@@ -12,7 +12,7 @@ from app.services.incidents import IncidentService
 from app.services.metrics import MetricsService
 from app.services.sites import SiteService
 from app.services.status_history import StatusHistoryService
-from app.db.models import CheckResult
+from app.db.models import CheckResult, Status
 from sqlalchemy import asc, desc, select
 
 router = APIRouter(prefix="/ui", tags=["ui"])
@@ -84,6 +84,7 @@ async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_
     sites = await site_service.list(limit=500)
     labels: list[str] = []
     uptime_values: list[float] = []
+    error_rates: list[float] = []
     # collect per-site uptime (24h)
     for site in sites:
         labels.append(site.name)
@@ -109,6 +110,11 @@ async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_
                 "statuses": [c.status.value for c in checks],
             }
         )
+        if checks:
+            errors = sum(1 for c in checks if c.status != Status.UP)
+            error_rates.append(errors / len(checks) * 100)
+        else:
+            error_rates.append(0.0)
 
     return templates.TemplateResponse(
         "metrics.html",
@@ -116,6 +122,7 @@ async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_
             "request": request,
             "labels": labels,
             "uptime_values": uptime_values,
+            "error_rates": error_rates,
             "latency_series": latency_series,
         },
     )
