@@ -142,16 +142,20 @@ class MonitoringWorker:
     async def _persist_result(self, scheduler_id: uuid.UUID, result: CheckResultDTO) -> None:
         async with self._session_factory() as session:
             async with session.begin():
+                # Lock only the scheduler_state row. joinedload() causes an outer join
+                # which combined with FOR UPDATE triggers asyncpg FeatureNotSupportedError.
                 state = await session.scalar(
                     select(SchedulerState)
-                    .options(joinedload(SchedulerState.target))
                     .where(SchedulerState.id == scheduler_id)
-                    .with_for_update()
+                    .with_for_update(of=SchedulerState, skip_locked=False)
                 )
-                if state is None or state.target is None:
+                if state is None:
                     return
 
-                target = state.target
+                # Load the Target in a separate query (no FOR UPDATE on outer join)
+                target = await session.get(Target, state.target_id)
+                if target is None:
+                    return
                 check_row = CheckResult(
                     target_id=target.id,
                     status=result.status,
