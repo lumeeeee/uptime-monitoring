@@ -9,7 +9,7 @@ from typing import Iterable
 
 from sqlalchemy import Select, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, noload
 
 from app.core.config import settings
 from app.db.models import CheckResult, Incident, SchedulerState, Status, Target
@@ -178,7 +178,8 @@ class MonitoringWorker:
         open_incident = await session.scalar(
             select(Incident)
             .where(Incident.target_id == target_id, Incident.resolved.is_(False))
-            .with_for_update(skip_locked=True)
+            .options(noload(Incident.target))
+            .with_for_update(of=Incident, skip_locked=True)
         )
 
         if result.status == Status.DOWN:
