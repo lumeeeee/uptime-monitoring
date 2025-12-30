@@ -90,18 +90,24 @@ async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_
         m = await metrics_service.uptime_window(site.id, window_hours=24)
         uptime_values.append((m.get("availability") or 0.0) * 100 if m.get("availability") is not None else 0.0)
 
-    # pick first site for latency timeseries sample
-    latency_labels: list[str] = []
-    latency_values: list[float] = []
-    selected_name = sites[0].name if sites else ""
-    if sites:
+    # build latency series per site (up to 100 points each)
+    latency_series: list[dict] = []
+    for site in sites:
         r = await session.scalars(
-            select(CheckResult).where(CheckResult.target_id == sites[0].id).order_by(asc(CheckResult.checked_at)).limit(100)
+            select(CheckResult)
+            .where(CheckResult.target_id == site.id)
+            .order_by(asc(CheckResult.checked_at))
+            .limit(100)
         )
         checks = list(r)
-        for c in checks:
-            latency_labels.append(c.checked_at.isoformat())
-            latency_values.append(c.latency_ms or 0.0)
+        latency_series.append(
+            {
+                "site_id": str(site.id),
+                "site_name": site.name,
+                "labels": [c.checked_at.isoformat() for c in checks],
+                "values": [c.latency_ms or 0.0 for c in checks],
+            }
+        )
 
     return templates.TemplateResponse(
         "metrics.html",
@@ -109,8 +115,6 @@ async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_
             "request": request,
             "labels": labels,
             "uptime_values": uptime_values,
-            "latency_labels": latency_labels,
-            "latency_values": latency_values,
-            "selected_name": selected_name,
+            "latency_series": latency_series,
         },
     )

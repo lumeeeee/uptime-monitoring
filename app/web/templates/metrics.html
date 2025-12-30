@@ -12,6 +12,8 @@
     .chart-holder{position:relative;width:100%;height:360px;}
     canvas{position:absolute;inset:0;width:100% !important;height:100% !important}
     @media(max-width:900px){.row{flex-direction:column}}
+    .controls{margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+    select{padding:6px 8px;border-radius:6px;border:1px solid #cbd5e1;}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -24,7 +26,10 @@
       <div class="chart-holder"><canvas id="uptimeChart" width="600" height="360"></canvas></div>
     </div>
     <div class="box">
-      <h3>Recent latencies — {{ selected_name }}</h3>
+      <div class="controls">
+        <h3 style="margin:0;">Recent latencies</h3>
+        <select id="site-select"></select>
+      </div>
       <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
     </div>
   </div>
@@ -33,8 +38,7 @@
   <script>
     const labels = {{ labels | tojson }};
     const uptimeValues = {{ uptime_values | tojson }};
-    const latencyLabels = {{ latency_labels | tojson }};
-    const latencyValues = {{ latency_values | tojson }};
+    const latencySeries = {{ latency_series | tojson }};
 
     Chart.defaults.responsive = true;
     Chart.defaults.maintainAspectRatio = false;
@@ -53,13 +57,32 @@
     });
 
     const ctx2 = document.getElementById('latencyChart').getContext('2d');
-    new Chart(ctx2, {
+    const selectEl = document.getElementById('site-select');
+
+    const fmtLabels = (arr) => arr.map(ts => new Date(ts).toLocaleString(undefined, {
+      year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'
+    }));
+
+    // populate select
+    latencySeries.forEach((s, idx) => {
+      const opt = document.createElement('option');
+      opt.value = s.site_id;
+      opt.textContent = s.site_name || `Site ${idx+1}`;
+      selectEl.appendChild(opt);
+    });
+
+    function getSeries(id){
+      return latencySeries.find(s => s.site_id === id) || latencySeries[0] || {labels:[], values:[]};
+    }
+
+    let current = getSeries(latencySeries[0]?.site_id);
+    const latencyChart = new Chart(ctx2, {
       type: 'line',
       data: {
-        labels: latencyLabels,
+        labels: fmtLabels(current.labels),
         datasets: [{
           label: 'Latency ms',
-          data: latencyValues,
+          data: current.values,
           borderColor: 'rgba(16,185,129,0.9)',
           backgroundColor: 'rgba(16,185,129,0.15)',
           fill: true,
@@ -67,6 +90,13 @@
         }]
       },
       options: {responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
+    });
+
+    selectEl.addEventListener('change', () => {
+      current = getSeries(selectEl.value);
+      latencyChart.data.labels = fmtLabels(current.labels);
+      latencyChart.data.datasets[0].data = current.values;
+      latencyChart.update();
     });
   </script>
 </body>
