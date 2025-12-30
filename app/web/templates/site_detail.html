@@ -73,7 +73,7 @@
         <div><strong>URL:</strong> <a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></div>
         <div><strong>Статус:</strong>
           {% if latest %}
-            <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
+            <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{% if latest.status.value == 'UP' %}ДОСТУПЕН{% elif latest.status.value == 'DOWN' %}НЕДОСТУПЕН{% else %}{{ latest.status.value }}{% endif %}</span>
           {% else %}
             <span class="pill pill-na">N/A</span>
           {% endif %}
@@ -121,7 +121,7 @@
             <td>{{ inc.id }}</td>
             <td>{{ inc.start_ts }}</td>
             <td>{{ inc.end_ts if inc.end_ts else '—' }}</td>
-            <td>{{ inc.last_status.value }}</td>
+            <td>{% if inc.last_status.value == 'UP' %}ДОСТУПЕН{% elif inc.last_status.value == 'DOWN' %}НЕДОСТУПЕН{% else %}{{ inc.last_status.value }}{% endif %}</td>
             <td>{{ 'Yes' if inc.resolved else 'No' }}</td>
           </tr>
           {% endfor %}
