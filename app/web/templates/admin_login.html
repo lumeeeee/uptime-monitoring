@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Admin Login</title>
+  <title>Вход администратора</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root{
@@ -37,21 +37,21 @@
 <body>
   <div class="shell">
     <div class="header">
-      <h2>Admin login</h2>
+      <h2>Вход администратора</h2>
     </div>
     <div class="content">
-      <p>Sign in with the admin credentials configured via env vars.</p>
-      {% if error %}<div class="error">Invalid username or password.</div>{% endif %}
+      <p>Войдите, используя учётные данные администратора, заданные через переменные окружения.</p>
+      {% if error %}<div class="error">Неверное имя пользователя или пароль.</div>{% endif %}
       <form method="post" action="/admin/login">
-        <label for="username">Username</label>
+        <label for="username">Имя пользователя</label>
         <input id="username" name="username" autocomplete="username" required />
-        <label for="password">Password</label>
+        <label for="password">Пароль</label>
         <input id="password" type="password" name="password" autocomplete="current-password" required />
-        <button type="submit">Sign in</button>
+        <button type="submit">Войти</button>
       </form>
       <div class="links">
-        <span>Need creds? Set ADMIN_USERNAME / ADMIN_PASSWORD.</span>
-        <a href="/ui">Back to dashboard</a>
+        <span>Нужны учётные данные? Установите ADMIN_USERNAME / ADMIN_PASSWORD.</span>
+        <a href="/ui">Назад на панель</a>
       </div>
     </div>
   </div>

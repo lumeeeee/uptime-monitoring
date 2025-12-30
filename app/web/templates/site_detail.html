@@ -62,7 +62,7 @@
     {% endmacro %}
     <div class="top">
       <div>
-        <a class="back" href="/ui">← Back to dashboard</a>
+        <a class="back" href="/ui">← Назад на панель</a>
         <h1>{{ site.name }}</h1>
       </div>
       
@@ -71,7 +71,7 @@
     <div class="card">
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div><strong>URL:</strong> <a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></div>
-        <div><strong>Status:</strong>
+        <div><strong>Статус:</strong>
           {% if latest %}
             <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
           {% else %}
@@ -81,7 +81,7 @@
       </div>
       <div class="metrics">
         <div class="metric">
-          <div class="label">Availability (24h)</div>
+          <div class="label">Доступность (24ч)</div>
           <div class="value">{% if metrics.availability is not none %}{{ '%.2f' % (metrics.availability * 100) }}%{% else %}N/A{% endif %}</div>
         </div>
         <div class="metric">
@@ -96,7 +96,7 @@
           <div class="label">SLA</div>
           <div class="value">
             {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
-              {{ metrics.sla_target_per_mille / 10 }}% {% if metrics.sla_met %}<span class="pill pill-up">OK</span>{% else %}<span class="pill pill-down">BREACH</span>{% endif %}
+              {{ metrics.sla_target_per_mille / 10 }}% {% if metrics.sla_met %}<span class="pill pill-up">Норма</span>{% else %}<span class="pill pill-down">Нарушение</span>{% endif %}
             {% else %}N/A{% endif %}
           </div>
         </div>
@@ -104,15 +104,15 @@
     </div>
 
     <div class="card">
-      <h3 style="margin:0 0 10px 0;">Recent incidents</h3>
+      <h3 style="margin:0 0 10px 0;">Последние инциденты</h3>
       <table>
         <thead>
           <tr>
             <th>ID</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Last status</th>
-            <th>Resolved</th>
+            <th>Начало</th>
+            <th>Окончание</th>
+            <th>Последний статус</th>
+            <th>Решён</th>
           </tr>
         </thead>
         <tbody>
