@@ -244,24 +244,25 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
         header_labels = ['Site', 'URL', 'Availability 24h %', 'Uptime (s)', 'Downtime (s)', 'SLA %', 'SLA', 'Errors %']
 
     # Title
-    pdf.set_font(pdf.font_family, 'B', 16)
+    font_name = 'DejaVu' if font_registered else 'Helvetica'
+    pdf.set_font(font_name, 'B', 16)
     pdf.cell(0, 10, title_text, ln=1)
     pdf.ln(4)
 
     # Table header
-    pdf.set_font(pdf.font_family, 'B', 10)
+    pdf.set_font(font_name, 'B', 10)
     col_widths = [40, 60, 24, 22, 22, 18, 14, 20]
     pdf.set_fill_color(14, 165, 233)
     for w, label in zip(col_widths, header_labels):
         pdf.cell(w, 8, label, border=1, fill=True)
     pdf.ln()
 
-    # Table rows
-    pdf.set_font(pdf.font_family, '', 9)
+    # Table rows (simple, no wrapping to avoid API differences)
+    pdf.set_font(font_name, '', 9)
     for row in data['rows']:
         vals = [
-            str(row.get('name', ''))[:30],
-            str(row.get('url', ''))[:60],
+            str(row.get('name', ''))[:40],
+            str(row.get('url', ''))[:80],
             f"{row['availability_pct']:.2f}" if row.get('availability_pct') is not None else '',
             str(row.get('uptime_seconds', '')),
             str(row.get('downtime_seconds', '')),
@@ -269,34 +270,18 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
             ('Да' if row.get('sla_met') else 'Нет') if font_registered else ('Yes' if row.get('sla_met') else 'No'),
             f"{row['error_rate_pct']:.2f}",
         ]
-        # Use multi_cell without unexpected kwargs; write each cell and move cursor accordingly
-        x_start = pdf.get_x()
-        y_start = pdf.get_y()
-        max_h = 0
-        # First pass: compute height for the tallest cell in the row
-        heights = []
         for w, v in zip(col_widths, vals):
-            # estimate height by writing to a buffer page (multi_cell will wrap)
-            # fpdf2 doesn't provide a direct measurement API; use a simple approximation
-            lines = pdf.multi_cell(w, 6, v, border=0, split_only=True)
-            h = len(lines) * 6
-            heights.append(h)
-            if h > max_h:
-                max_h = h
-
-        # Second pass: actually draw the cells with borders, using the computed max height
-        for w, v, h in zip(col_widths, vals, heights):
-            pdf.multi_cell(w, 6, v, border=1)
-            x = pdf.get_x()
-            y = pdf.get_y()
-            # move to the right of the cell for the next column
-            pdf.set_xy(x + (w if x == 0 else 0), y_start)
-        pdf.set_xy(x_start, y_start + max_h)
+            text = v if isinstance(v, str) else str(v)
+            # truncate to avoid overflow
+            pdf.cell(w, 8, text[:int(w * 2)], border=1)
+        pdf.ln()
 
     try:
         pdf_output = pdf.output(dest='S')
-        # pdf_output is a string of binary data; encode to bytes safely
-        pdf_bytes = pdf_output.encode('latin-1', errors='ignore')
+        if isinstance(pdf_output, bytes):
+            pdf_bytes = pdf_output
+        else:
+            pdf_bytes = str(pdf_output).encode('latin-1', errors='replace')
     except Exception:
         logging.exception('Failed to generate PDF output')
         raise HTTPException(status_code=500, detail='Failed to generate PDF')
