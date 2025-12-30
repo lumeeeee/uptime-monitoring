@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pydantic import AnyUrl, BaseSettings, Field
+from pydantic import AnyUrl, Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -14,10 +15,6 @@ class Settings(BaseSettings):
     telegram_bot_token: str | None = None
     telegram_chat_id: str | None = None
     telegram_parse_mode: str = "Markdown"
-
-    class Config:
-        # ENV-only configuration as per requirements
-        env_prefix = ""
 
 
 settings = Settings()
