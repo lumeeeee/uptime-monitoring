@@ -1,0 +1,17 @@
+[Unit]
+Description=Uptime Monitoring API
+After=network.target
+Requires=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/uptime-monitoring
+EnvironmentFile=/etc/uptime-monitoring.env
+ExecStart=/usr/bin/env python -m uvicorn app.api.main:app --host ${API_HOST:-0.0.0.0} --port ${API_PORT:-8000}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

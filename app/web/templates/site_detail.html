@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ site.name }} - Details</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f7f9fb; color: #1f2933; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .section { margin-bottom: 24px; background: #fff; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .status-up { color: #0b8a3c; font-weight: 700; }
+    .status-down { color: #c0392b; font-weight: 700; }
+    .pill { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+    .pill-up { background: #e6f6ec; color: #0b8a3c; }
+    .pill-down { background: #fdecea; color: #c0392b; }
+    .pill-na { background: #f1f5f9; color: #475569; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    th { background: #eef2f7; font-weight: 600; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <a href="/ui">← Back to dashboard</a>
+    <h2>{{ site.name }}</h2>
+    <p><strong>URL:</strong> <a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></p>
+    <p><strong>Status:</strong>
+      {% if latest %}
+        <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
+      {% else %}
+        <span class="pill pill-na">N/A</span>
+      {% endif %}
+    </p>
+    <p><strong>Availability (24h):</strong>
+      {% if metrics.availability is not none %}
+        {{ '%.2f' % (metrics.availability * 100) }}%
+      {% else %}N/A{% endif %}
+      {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
+        — SLA {{ metrics.sla_target_per_mille / 10 }}%:
+        {% if metrics.sla_met %}
+          <span class="pill pill-up">OK</span>
+        {% else %}
+          <span class="pill pill-down">BREACH</span>
+        {% endif %}
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="section">
+    <h3>Recent incidents</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Last status</th>
+          <th>Resolved</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inc in incidents %}
+        <tr>
+          <td>{{ inc.id }}</td>
+          <td>{{ inc.start_ts }}</td>
+          <td>{{ inc.end_ts if inc.end_ts else '—' }}</td>
+          <td>{{ inc.last_status.value }}</td>
+          <td>{{ 'Yes' if inc.resolved else 'No' }}</td>
+        </tr>
+        {% endfor %}
+        {% if incidents|length == 0 %}
+        <tr><td colspan="5">No incidents</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
