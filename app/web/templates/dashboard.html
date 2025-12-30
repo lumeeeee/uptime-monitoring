@@ -118,7 +118,13 @@
         </div>
         <div>
           {% if latest %}
-            <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
+            {% if latest.status.value == 'UP' %}
+              <span class="pill pill-up">Доступен</span>
+            {% elif latest.status.value == 'DOWN' %}
+              <span class="pill pill-down">Недоступен</span>
+            {% else %}
+              <span class="pill">{{ latest.status.value }}</span>
+            {% endif %}
           {% else %}
             <span class="pill pill-na">N/A</span>
           {% endif %}
