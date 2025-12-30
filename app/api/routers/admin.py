@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_db_session
 from app.core.config import settings
 from app.services.sites import SiteService
+from app.db.models import SchedulerState
 
 router = APIRouter(prefix="/admin", tags=["admin"], include_in_schema=False)
 templates = Jinja2Templates(directory="app/web/templates")
@@ -112,7 +113,7 @@ async def admin_add_site(
     sla_target: int | None = Form(None),
 ):
     svc = SiteService(session)
-    await svc.create(
+    target = await svc.create(
         name=name,
         url=url,
         check_interval_sec=check_interval_sec,
@@ -121,6 +122,8 @@ async def admin_add_site(
         retry_backoff_ms=retry_backoff_ms,
         sla_target=sla_target,
     )
+    # ensure scheduler entry exists so worker will pick it up immediately
+    session.add(SchedulerState(target_id=target.id, next_run_at=datetime.now(timezone.utc)))
     await session.commit()
     return RedirectResponse(url="/admin/sites", status_code=status.HTTP_302_FOUND)
 
