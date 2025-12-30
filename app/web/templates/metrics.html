@@ -23,7 +23,7 @@
     .theme-toggle{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;}
     .row{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap;}
     .box{flex:1;min-width:320px; background: linear-gradient(150deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border:1px solid var(--border); border-radius: var(--radius); padding:16px; box-shadow: 0 14px 40px rgba(0,0,0,0.25); position:relative; overflow:hidden; }
-    .box::before{content:"";position:absolute;inset:0;background: radial-gradient(circle at 20% 15%, rgba(56,189,248,0.14), transparent 45%);opacity:0;transition:opacity .2s ease;}
+    .box::before{content:"";position:absolute;inset:0;background: radial-gradient(circle at 20% 15%, rgba(56,189,248,0.14), transparent 45%);opacity:0;transition:opacity .2s ease;pointer-events: none;}
     .box:hover::before{opacity:1;}
     .chart-holder{position:relative;width:100%;height:360px;margin-top:10px;}
     canvas{position:absolute;inset:0;width:100% !important;height:100% !important}
@@ -37,7 +37,7 @@
   <div class="page">
     <div class="top">
       <h1>Metrics</h1>
-      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
+      
     </div>
 
     <div class="row">
@@ -56,28 +56,6 @@
   </div>
 
   <script>
-    (function(){
-      const key = 'uptime-theme';
-      const btn = document.getElementById('theme-toggle');
-      function apply(theme){
-        if(theme === 'dark') document.documentElement.classList.add('theme-dark');
-        else document.documentElement.classList.remove('theme-dark');
-        if(btn){
-          btn.setAttribute('aria-pressed', theme === 'dark');
-          btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
-        }
-      }
-      const stored = localStorage.getItem(key) || 'light';
-      apply(stored);
-      if(btn){
-        btn.addEventListener('click', ()=>{
-          const next = (localStorage.getItem(key) || 'light') === 'dark' ? 'light' : 'dark';
-          localStorage.setItem(key, next);
-          apply(next);
-        });
-      }
-    })();
-
     const labels = {{ labels | tojson }};
     const uptimeValues = {{ uptime_values | tojson }};
     const latencySeries = {{ latency_series | tojson }};

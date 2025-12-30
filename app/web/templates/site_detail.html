@@ -52,7 +52,7 @@
         <a class="back" href="/ui">← Back to dashboard</a>
         <h1>{{ site.name }}</h1>
       </div>
-      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
+      
     </div>
 
     <div class="card">
@@ -119,28 +119,6 @@
       </table>
     </div>
   </div>
-  <script>
-    (function(){
-      const key = 'uptime-theme';
-      const btn = document.getElementById('theme-toggle');
-      function apply(theme){
-        if(theme === 'dark') document.documentElement.classList.add('theme-dark');
-        else document.documentElement.classList.remove('theme-dark');
-        if(btn){
-          btn.setAttribute('aria-pressed', theme === 'dark');
-          btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
-        }
-      }
-      const stored = localStorage.getItem(key) || 'light';
-      apply(stored);
-      if(btn){
-        btn.addEventListener('click', ()=>{
-          const next = (localStorage.getItem(key) || 'light') === 'dark' ? 'light' : 'dark';
-          localStorage.setItem(key, next);
-          apply(next);
-        });
-      }
-    })();
-  </script>
+  
 </body>
 </html>
