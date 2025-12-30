@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Sites</title>
+  <style>
+    :root{
+      --bg: #f7f9fb;
+      --panel-bg: #ffffff;
+      --text: #1f2933;
+      --muted: #475569;
+      --accent: #2563eb;
+      --up: #0b8a3c;
+      --card-border: #000000;
+      --card-accent: rgba(37,99,235,0.18);
+    }
+    .theme-dark{
+      --bg: #0b1220;
+      --panel-bg: #071124;
+      --text: #e6eef8;
+      --muted: #a6b8d6;
+      --accent: #60a5fa;
+      --up: #34d399;
+      --card-border: #000000;
+      --card-accent: rgba(96,165,250,0.20);
+    }
+    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .theme-toggle { background: transparent; border: 1px solid rgba(0,0,0,0.08); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+    .panel { position: relative; background: linear-gradient(180deg, var(--panel-bg), rgba(255,255,255,0.02)); border: 2px solid var(--card-border); border-radius: 14px; padding: 18px; box-shadow: 0 10px 26px rgba(2,6,23,0.14); overflow: hidden; margin-bottom: 18px; }
+    .panel::before{ content: ""; position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: linear-gradient(90deg, var(--card-accent), transparent); pointer-events: none; }
+    h2 { margin: 0 0 8px 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06); text-align: left; }
+    th { background: rgba(0,0,0,0.02); font-weight: 700; }
+    .theme-dark th, .theme-dark td { border-color: rgba(255,255,255,0.08); }
+    .theme-dark th { background: rgba(255,255,255,0.04); }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+    .pill-up { background: rgba(52,211,153,0.12); color: var(--up); }
+    .pill-inactive { background: rgba(148,163,184,0.18); color: var(--muted); }
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    label { font-weight: 600; font-size: 13px; }
+    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.9); color: var(--text); }
+    .theme-dark input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: var(--text); }
+    .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .btn { padding: 11px 16px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 22px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .12s ease; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(37,99,235,0.35); }
+    .muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <a href="/ui">← Dashboard</a>
+      <div class="muted">Signed in as {{ username }}</div>
+    </div>
+    <div class="actions">
+      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
+      <a href="/admin/logout" class="btn" style="text-decoration:none;">Logout</a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Sites</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>URL</th>
+          <th>Active</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sites %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.url }}</a></td>
+          <td>{% if s.is_active %}<span class="pill pill-up">Yes</span>{% else %}<span class="pill pill-inactive">No</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        {% if sites|length == 0 %}
+        <tr><td colspan="3" class="muted">No sites yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Add site</h2>
+    <form method="post" action="/admin/sites">
+      <div>
+        <label for="name">Name</label>
+        <input id="name" name="name" placeholder="Status Page" required />
+      </div>
+      <div>
+        <label for="url">URL</label>
+        <input id="url" name="url" placeholder="https://example.com" required />
+      </div>
+      <div>
+        <label for="check_interval_sec">Check interval (sec)</label>
+        <input id="check_interval_sec" type="number" name="check_interval_sec" min="5" value="60" required />
+      </div>
+      <div>
+        <label for="timeout_ms">Timeout (ms)</label>
+        <input id="timeout_ms" type="number" name="timeout_ms" min="1000" value="5000" required />
+      </div>
+      <div>
+        <label for="retry_count">Retry count</label>
+        <input id="retry_count" type="number" name="retry_count" min="0" value="1" required />
+      </div>
+      <div>
+        <label for="retry_backoff_ms">Retry backoff (ms)</label>
+        <input id="retry_backoff_ms" type="number" name="retry_backoff_ms" min="0" value="500" required />
+      </div>
+      <div>
+        <label for="sla_target">SLA target (%)</label>
+        <input id="sla_target" type="number" name="sla_target" min="0" max="100" value="99" />
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button class="btn" type="submit">Add site</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    (function(){
+      const key = 'uptime-theme';
+      const btn = document.getElementById('theme-toggle');
+      function apply(theme){
+        if(theme === 'dark') document.documentElement.classList.add('theme-dark');
+        else document.documentElement.classList.remove('theme-dark');
+        if(btn){
+          btn.setAttribute('aria-pressed', theme === 'dark');
+          btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+      }
+      const stored = localStorage.getItem(key) || 'light';
+      apply(stored);
+      if(btn){
+        btn.addEventListener('click', ()=>{
+          const next = (localStorage.getItem(key) || 'light') === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(key, next);
+          apply(next);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
