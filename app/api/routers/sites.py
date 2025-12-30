@@ -70,4 +70,3 @@ async def delete_site(
         deleted = await service.delete(site_id)
         if not deleted:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Site not found")
-    return None
