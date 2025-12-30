@@ -227,6 +227,12 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
         parts.append(f"{minutes}м")
         return " ".join(parts)
 
+    def safe_text(text: str) -> str:
+        if font_registered:
+            return text
+        # fall back to latin-1 with replacement to avoid Unicode errors when font missing
+        return text.encode('latin-1', errors='replace').decode('latin-1')
+
     def draw_bar_chart(title: str, items: list[tuple[str, float]], max_value: float, color: tuple[int, int, int]):
         nonlocal font_name
         if not items:
@@ -294,8 +300,8 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
     pdf.ln(4)
 
     # Charts (top 10 in current order)
-    availability_items = [(lbl, val or 0.0) for lbl, val in zip(data["labels"], data["uptime_values"])][:10]
-    error_items = [(lbl, val or 0.0) for lbl, val in zip(data["labels"], data["error_rates"])][:10]
+    availability_items = [(safe_text(lbl), val or 0.0) for lbl, val in zip(data["labels"], data["uptime_values"])][:10]
+    error_items = [(safe_text(lbl), val or 0.0) for lbl, val in zip(data["labels"], data["error_rates"])][:10]
     draw_bar_chart('Доступность 24ч, %' if font_registered else 'Availability 24h, %', availability_items, max([v for _, v in availability_items] + [100]), (14, 165, 233))
     draw_bar_chart('Ошибки, %' if font_registered else 'Errors, %', error_items, max([v for _, v in error_items] + [100]), (239, 68, 68))
     pdf.ln(2)
@@ -313,8 +319,8 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
     line_height = 6
     for row in data['rows']:
         vals = [
-            str(row.get('name', '')),
-            str(row.get('url', '')),
+            safe_text(str(row.get('name', ''))),
+            safe_text(str(row.get('url', ''))),
             f"{row['availability_pct']:.2f}" if row.get('availability_pct') is not None else '',
             humanize_seconds(row.get('uptime_seconds')),
             humanize_seconds(row.get('downtime_seconds')),
