@@ -18,15 +18,28 @@ branch_labels = None
 depends_on = None
 
 
-status_enum = sa.Enum("UP", "DOWN", name="status_enum")
+status_enum = sa.Enum("UP", "DOWN", name="status_enum", create_type=False)
 notification_status_enum = sa.Enum(
-    "QUEUED", "SENT", "FAILED", name="notification_status_enum"
+    "QUEUED", "SENT", "FAILED", name="notification_status_enum", create_type=False
 )
 
 
 def upgrade() -> None:
-    status_enum.create(op.get_bind(), checkfirst=True)
-    notification_status_enum.create(op.get_bind(), checkfirst=True)
+    # Create enum types idempotently
+    op.execute(
+        "DO $$ BEGIN "
+        "IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'status_enum') THEN "
+        "CREATE TYPE status_enum AS ENUM ('UP', 'DOWN'); "
+        "END IF; "
+        "END $$;"
+    )
+    op.execute(
+        "DO $$ BEGIN "
+        "IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'notification_status_enum') THEN "
+        "CREATE TYPE notification_status_enum AS ENUM ('QUEUED', 'SENT', 'FAILED'); "
+        "END IF; "
+        "END $$;"
+    )
 
     op.create_table(
         "targets",
