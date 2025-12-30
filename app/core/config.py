@@ -16,5 +16,9 @@ class Settings(BaseSettings):
     telegram_chat_id: str | None = None
     telegram_parse_mode: str = "Markdown"
 
+    admin_username: str = Field(default="admin")
+    admin_password: str = Field(default="change-me")
+    session_secret: str = Field(default="dev-secret-change")
+
 
 settings = Settings()
