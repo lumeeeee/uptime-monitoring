@@ -287,5 +287,9 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
         raise HTTPException(status_code=500, detail='Failed to generate PDF')
 
     buffer = io.BytesIO(pdf_bytes)
-    headers = {"Content-Disposition": "attachment; filename=metrics.pdf"}
+    buffer.seek(0)
+    headers = {
+        "Content-Disposition": "attachment; filename=metrics.pdf",
+        "Content-Length": str(len(pdf_bytes)),
+    }
     return StreamingResponse(buffer, media_type="application/pdf", headers=headers)
