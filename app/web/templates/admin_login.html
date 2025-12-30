@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Вход администратора</title>
+  <title>Панель администрирования</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root{
@@ -37,11 +37,11 @@
 <body>
   <div class="shell">
     <div class="header">
-      <h2>Вход администратора</h2>
+      <h2>Панель администрирования</h2>
     </div>
     <div class="content">
-      <p>Войдите, используя учётные данные администратора, заданные через переменные окружения.</p>
-      {% if error %}<div class="error">Неверное имя пользователя или пароль.</div>{% endif %}
+      <p>Войдите, используя учётные данные администратора</p>
+      {% if error %}<div class="error">Неверное имя пользователя или пароль</div>{% endif %}
       <form method="post" action="/admin/login">
         <label for="username">Имя пользователя</label>
         <input id="username" name="username" autocomplete="username" required />
@@ -50,8 +50,7 @@
         <button type="submit">Войти</button>
       </form>
       <div class="links">
-        <span>Нужны учётные данные? Установите ADMIN_USERNAME / ADMIN_PASSWORD.</span>
-        <a href="/ui">Назад на панель</a>
+        <a href="/ui">Назад в панель</a>
       </div>
     </div>
   </div>
