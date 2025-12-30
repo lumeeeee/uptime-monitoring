@@ -83,10 +83,10 @@ class MonitoringWorker:
 
         async with self._session_factory() as session:
             async with session.begin():
-                stmt: Select[SchedulerState] = (
-                    select(SchedulerState)
-                    .join(SchedulerState.target)
-                    .options(joinedload(SchedulerState.target))
+                # Use inner join and lock only scheduler_state rows to avoid FOR UPDATE on nullable side
+                stmt = (
+                    select(SchedulerState, Target)
+                    .join(Target, SchedulerState.target_id == Target.id)
                     .where(
                         Target.is_active.is_(True),
                         SchedulerState.next_run_at <= now,
@@ -97,18 +97,13 @@ class MonitoringWorker:
                     )
                     .order_by(SchedulerState.next_run_at)
                     .limit(limit)
-                    .with_for_update(skip_locked=True)
+                    .with_for_update(of=SchedulerState, skip_locked=True)
                 )
 
-                states: Iterable[SchedulerState] = (
-                    await session.scalars(stmt)
-                ).all()
+                rows: Iterable[tuple[SchedulerState, Target]] = (await session.execute(stmt)).all()
 
                 lease_until = now + timedelta(seconds=settings.lease_timeout_sec)
-                for state in states:
-                    target = state.target
-                    if target is None:
-                        continue
+                for state, target in rows:
                     state.lease_owner = self._worker_id
                     state.lease_expires_at = lease_until
                     jobs.append(

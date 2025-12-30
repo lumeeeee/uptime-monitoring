@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db_session
@@ -60,7 +60,9 @@ async def update_site(
     return site
 
 
-@router.delete("/{site_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{site_id}", status_code=status.HTTP_204_NO_CONTENT, response_class=Response
+)
 async def delete_site(
     site_id: uuid.UUID,
     session: AsyncSession = Depends(get_db_session),
@@ -70,3 +72,5 @@ async def delete_site(
         deleted = await service.delete(site_id)
         if not deleted:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Site not found")
+    # Explicit empty response to satisfy 204 expectations
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
