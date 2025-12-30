@@ -69,8 +69,8 @@ async def site_detail(
     tz_msk = timezone(timedelta(hours=3))
     incidents_serialized = []
     for inc in incidents:
-        start_ts = inc.start_ts.astimezone(tz_msk).strftime("%Y-%m-%d %H:%M:%S") if inc.start_ts is not None else None
-        end_ts = inc.end_ts.astimezone(tz_msk).strftime("%Y-%m-%d %H:%M:%S") if inc.end_ts is not None else None
+        start_ts = inc.start_ts.astimezone(tz_msk).strftime("%d.%m.%Y %H:%M:%S") if inc.start_ts is not None else None
+        end_ts = inc.end_ts.astimezone(tz_msk).strftime("%d.%m.%Y %H:%M:%S") if inc.end_ts is not None else None
         incidents_serialized.append({
             "id": inc.id,
             "start_ts": start_ts,
