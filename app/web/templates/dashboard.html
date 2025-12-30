@@ -29,7 +29,10 @@
     .theme-toggle { float: right; background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--text); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
     .theme-toggle:focus { outline: 2px solid var(--accent); }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-    .card { background: var(--panel-bg); padding: 16px; border-radius: 8px; box-shadow: var(--card-shadow); }
+    :root{--card-border: rgba(0,0,0,0.06);} /* fallback */
+    .theme-dark{--card-border: rgba(255,255,255,0.06);} /* dark overrides */
+    .card { background: var(--panel-bg); padding: 16px; border-radius: 8px; box-shadow: var(--card-shadow); border: 1px solid var(--card-border); transition: transform .12s ease, box-shadow .12s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 6px 18px rgba(2,6,23,0.12); }
     .card h2 { margin: 0 0 6px 0; font-size: 18px; }
     .card .meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
     .card .metrics { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
