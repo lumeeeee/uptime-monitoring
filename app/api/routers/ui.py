@@ -279,8 +279,9 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
 
     try:
         pdf_output = pdf.output(dest='S')
-        if isinstance(pdf_output, bytes):
-            pdf_bytes = pdf_output
+        # fpdf2 may return `bytes`, `bytearray` or `str` depending on version
+        if isinstance(pdf_output, (bytes, bytearray)):
+            pdf_bytes = bytes(pdf_output)
         else:
             pdf_bytes = str(pdf_output).encode('latin-1', errors='replace')
     except Exception:
