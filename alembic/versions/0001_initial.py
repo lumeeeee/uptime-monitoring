@@ -18,8 +18,8 @@ branch_labels = None
 depends_on = None
 
 
-status_enum = sa.Enum("UP", "DOWN", name="status_enum", create_type=False)
-notification_status_enum = sa.Enum(
+status_enum = postgresql.ENUM("UP", "DOWN", name="status_enum", create_type=False)
+notification_status_enum = postgresql.ENUM(
     "QUEUED", "SENT", "FAILED", name="notification_status_enum", create_type=False
 )
 
@@ -77,7 +77,17 @@ def upgrade() -> None:
             sa.ForeignKey("targets.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("status", status_enum, nullable=False),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "UP",
+                "DOWN",
+                name="status_enum",
+                create_type=False,
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
         sa.Column("http_status", sa.Integer(), nullable=True),
         sa.Column("latency_ms", sa.Integer(), nullable=True),
         sa.Column("error", sa.Text(), nullable=True),
@@ -112,7 +122,17 @@ def upgrade() -> None:
         ),
         sa.Column("start_ts", sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column("end_ts", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.Column("last_status", status_enum, nullable=False),
+        sa.Column(
+            "last_status",
+            postgresql.ENUM(
+                "UP",
+                "DOWN",
+                name="status_enum",
+                create_type=False,
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
         sa.Column("resolved", sa.Boolean(), nullable=False, server_default=sa.text("false")),
     )
     op.create_index(
@@ -166,7 +186,18 @@ def upgrade() -> None:
             sa.ForeignKey("notification_channels.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("status", notification_status_enum, nullable=False),
+        sa.Column(
+            "status",
+            postgresql.ENUM(
+                "QUEUED",
+                "SENT",
+                "FAILED",
+                name="notification_status_enum",
+                create_type=False,
+                inherit_schema=True,
+            ),
+            nullable=False,
+        ),
         sa.Column("error", sa.Text(), nullable=True),
         sa.Column("sent_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column(
