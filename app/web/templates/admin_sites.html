@@ -58,8 +58,7 @@
     .muted { color: var(--muted); }
     .del-btn { background:#ef4444; border:none; color:#fff; padding:8px 10px; border-radius:10px; cursor:pointer; box-shadow:0 8px 20px rgba(239,68,68,0.25); }
     @media(min-width:1025px){
-      body { padding-left: calc(var(--sidebar-w) + 26px); }
-      .sidebar { transform: translateX(0); }
+      body.sidebar-open { padding-left: calc(var(--sidebar-w) + 26px); }
     }
     @media(max-width:1024px){
       body { padding-left:26px; }

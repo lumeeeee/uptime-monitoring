@@ -54,8 +54,7 @@
     .btn.ghost{background: transparent; color: var(--text); border-color: var(--border); box-shadow:none;}
     .btn.ghost:hover{border-color: var(--accent); color: var(--text);}
     @media(min-width:1025px){
-      body { padding-left: calc(var(--sidebar-w) + 28px); }
-      .sidebar { transform: translateX(0); }
+      body.sidebar-open { padding-left: calc(var(--sidebar-w) + 28px); }
     }
     @media(max-width:1024px){
       body { padding-left:28px; }
