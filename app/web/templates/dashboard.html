@@ -52,6 +52,19 @@
 </head>
 <body>
   <div class="page">
+    {% macro fmt_seconds(s) %}
+      {% set s = s | int %}
+      {% set days = s // 86400 %}
+      {% set hours = (s % 86400) // 3600 %}
+      {% set minutes = (s % 3600) // 60 %}
+      {% if days > 0 %}
+        {{ days }} сут {{ hours }} ч {{ minutes }} мин
+      {% elif hours > 0 %}
+        {{ hours }} ч {{ minutes }} мин
+      {% else %}
+        {{ minutes }} мин
+      {% endif %}
+    {% endmacro %}
     <div class="topbar">
       <div>
         <h1>Uptime Dashboard</h1>
@@ -84,11 +97,11 @@
           </div>
           <div class="metric">
             <div class="label">Uptime</div>
-            <div class="value">{{ '%.1f' % metrics.uptime_seconds }} s</div>
+              <div class="value">{{ fmt_seconds(metrics.uptime_seconds) }}</div>
           </div>
           <div class="metric">
             <div class="label">Downtime</div>
-            <div class="value">{{ '%.1f' % metrics.downtime_seconds }} s</div>
+              <div class="value">{{ fmt_seconds(metrics.downtime_seconds) }}</div>
           </div>
           <div class="metric">
             <div class="label">SLA</div>
