@@ -29,6 +29,10 @@
     canvas{position:absolute;inset:0;width:100% !important;height:100% !important}
     .controls{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
     select{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);}
+    .stats{display:grid;grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:14px;}
+    .stat{padding:12px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:6px;}
+    .stat .label{color:var(--muted); font-size:12px; letter-spacing:0.01em;}
+    .stat .value{font-weight:700; font-size:18px;}
     @media(max-width:900px){.row{flex-direction:column}}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -49,6 +53,12 @@
         <div class="controls">
           <h3 style="margin:0;">Recent latencies</h3>
           <select id="site-select"></select>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="label">p50</div><div class="value" id="p50">—</div></div>
+          <div class="stat"><div class="label">p95</div><div class="value" id="p95">—</div></div>
+          <div class="stat"><div class="label">p99</div><div class="value" id="p99">—</div></div>
+          <div class="stat"><div class="label">Error rate</div><div class="value" id="err">—</div></div>
         </div>
         <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
       </div>
@@ -84,6 +94,31 @@
       year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'
     }));
 
+    const percentile = (arr, p) => {
+      if(!arr.length) return null;
+      const sorted = [...arr].sort((a,b)=>a-b);
+      const idx = (sorted.length - 1) * (p/100);
+      const lo = Math.floor(idx), hi = Math.ceil(idx);
+      if(lo === hi) return sorted[lo];
+      return sorted[lo] + (sorted[hi]-sorted[lo]) * (idx - lo);
+    };
+
+    const updateStats = (series) => {
+      const vals = series.values || [];
+      const statuses = series.statuses || [];
+      const p50El = document.getElementById('p50');
+      const p95El = document.getElementById('p95');
+      const p99El = document.getElementById('p99');
+      const errEl = document.getElementById('err');
+      const set = (el, val, suffix=' ms') => { el.textContent = val === null ? '—' : `${Math.round(val)}${suffix}`; };
+      set(p50El, percentile(vals, 50));
+      set(p95El, percentile(vals, 95));
+      set(p99El, percentile(vals, 99));
+      const errs = statuses.filter(s => s && s !== 'UP').length;
+      const rate = statuses.length ? (errs / statuses.length) * 100 : null;
+      errEl.textContent = rate === null ? '—' : `${rate.toFixed(1)}%`;
+    };
+
     latencySeries.forEach((s, idx) => {
       const opt = document.createElement('option');
       opt.value = s.site_id;
@@ -96,6 +131,7 @@
     }
 
     let current = getSeries(latencySeries[0]?.site_id);
+    updateStats(current);
     const latencyChart = new Chart(ctx2, {
       type: 'line',
       data: {

@@ -106,6 +106,7 @@ async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_
                 "site_name": site.name,
                 "labels": [c.checked_at.isoformat() for c in checks],
                 "values": [c.latency_ms or 0.0 for c in checks],
+                "statuses": [c.status.value for c in checks],
             }
         )
 
