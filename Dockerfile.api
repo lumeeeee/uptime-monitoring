@@ -21,6 +21,14 @@ COPY . .
 
 ENV PATH=/root/.local/bin:$PATH
 
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential && \
+    pip install --user --no-cache-dir -r requirements.txt && \
+    apt-get remove -y build-essential && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
 EXPOSE 8000
 
 HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
