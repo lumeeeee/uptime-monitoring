@@ -13,8 +13,8 @@
       --up: #0b8a3c;
       --down: #c0392b;
       --card-shadow: 0 1px 4px rgba(16,24,40,0.06);
-      --card-border: rgba(15,23,42,0.14);
-      --card-accent: rgba(37,99,235,0.12);
+      --card-border: #cbd5e1; /* stronger visible border on light theme */
+      --card-accent: rgba(37,99,235,0.18);
       --card-bg-contrast: #ffffff;
     }
     .theme-dark{
@@ -26,8 +26,8 @@
       --up: #34d399;
       --down: #fb7185;
       --card-shadow: 0 2px 8px rgba(2,6,23,0.6);
-      --card-border: rgba(255,255,255,0.12);
-      --card-accent: rgba(96,165,250,0.16);
+      --card-border: rgba(255,255,255,0.18); /* slightly stronger in dark */
+      --card-accent: rgba(96,165,250,0.20);
       --card-bg-contrast: rgba(255,255,255,0.02);
     }
     body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); }
@@ -37,10 +37,10 @@
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
     :root{--card-border: rgba(0,0,0,0.06);} /* fallback */
     .theme-dark{--card-border: rgba(255,255,255,0.06);} /* dark overrides */
-    .card { position: relative; background: linear-gradient(180deg, var(--panel-bg), var(--card-bg-contrast)); padding: 18px; border-radius: 12px; box-shadow: 0 2px 10px rgba(2,6,23,0.06); border: 1.5px solid var(--card-border); overflow: hidden; transition: transform .12s ease, box-shadow .16s ease, border-color .12s ease; }
+    .card { position: relative; background: linear-gradient(180deg, var(--panel-bg), var(--card-bg-contrast)); padding: 18px; border-radius: 12px; box-shadow: 0 2px 10px rgba(2,6,23,0.06); border: 2px solid var(--card-border); overflow: hidden; transition: transform .12s ease, box-shadow .16s ease, border-color .12s ease; }
     .card::before{ content: ""; position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: linear-gradient(90deg, var(--card-accent), rgba(0,0,0,0)); pointer-events: none; }
-    .card:hover { transform: translateY(-6px); box-shadow: 0 14px 40px rgba(2,6,23,0.12); border-color: var(--card-accent); }
-    .card:focus-within { outline: 3px solid rgba(37,99,235,0.08); }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 18px 50px rgba(2,6,23,0.14); border-color: var(--card-accent); }
+    .card:focus-within { outline: 3px solid rgba(37,99,235,0.10); }
     .card h2 { margin: 0 0 6px 0; font-size: 18px; }
     .card .meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
     .card .metrics { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
