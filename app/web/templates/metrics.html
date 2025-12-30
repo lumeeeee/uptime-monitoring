@@ -33,6 +33,11 @@
     .stat{padding:12px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:6px;}
     .stat .label{color:var(--muted); font-size:12px; letter-spacing:0.01em;}
     .stat .value{font-weight:700; font-size:18px;}
+    .actions{display:flex; gap:10px; align-items:center;}
+    .btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color:#0b1220; font-weight:700; text-decoration:none; box-shadow:0 10px 28px rgba(56,189,248,0.25); transition: transform .08s ease, box-shadow .12s ease;}
+    .btn:hover{transform: translateY(-1px); box-shadow:0 14px 34px rgba(56,189,248,0.32);}
+    .btn.ghost{background: transparent; color: var(--text); border-color: var(--border); box-shadow:none;}
+    .btn.ghost:hover{border-color: var(--accent); color: var(--text);}
     @media(max-width:900px){.row{flex-direction:column}}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -41,7 +46,10 @@
   <div class="page">
     <div class="top">
       <h1>Metrics</h1>
-      
+      <div class="actions">
+        <a class="btn" href="/ui/metrics.csv">Export CSV</a>
+        <a class="btn ghost" href="/ui/metrics.pdf">Export PDF</a>
+      </div>
     </div>
 
     <div class="row">
