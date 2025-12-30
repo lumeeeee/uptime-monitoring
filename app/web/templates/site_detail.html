@@ -4,104 +4,120 @@
   <meta charset="UTF-8" />
   <title>{{ site.name }} - Details</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root{
-      --bg: #f7f9fb;
-      --panel-bg: #ffffff;
-      --text: #1f2933;
-      --muted: #475569;
-      --accent: #2563eb;
-      --up: #0b8a3c;
-      --down: #c0392b;
-      --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      --card-border: #000000;
-      --card-accent: rgba(37,99,235,0.12);
-    }
-    .theme-dark{
-      --bg: #0b1220;
-      --panel-bg: #071124;
-      --text: #e6eef8;
-      --muted: #a6b8d6;
-      --accent: #60a5fa;
+      --bg: #0f172a;
+      --panel: #0b1220;
+      --surface: rgba(255,255,255,0.02);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
       --up: #34d399;
-      --down: #fb7185;
-      --card-shadow: 0 2px 8px rgba(2,6,23,0.6);
-      --card-border: #000000;
-      --card-accent: rgba(96,165,250,0.18);
+      --down: #f87171;
+      --border: #0b1220;
+      --card-border: #0a0f1a;
+      --radius: 14px;
     }
-    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); }
-    a { color: var(--accent); text-decoration: none; }
+    body { margin:0; padding:28px; background: radial-gradient(circle at 30% 10%, rgba(56,189,248,0.08), transparent 32%), radial-gradient(circle at 85% 15%, rgba(14,165,233,0.08), transparent 28%), var(--bg); color: var(--text); font-family: 'Space Grotesk','Inter',system-ui,sans-serif; }
+    .page { max-width: 1100px; margin: 0 auto; }
+    .top { display:flex; align-items:center; justify-content: space-between; gap:12px; margin-bottom:18px; }
+    .back { color: var(--muted); font-size:13px; }
+    h1 { margin:6px 0 0 0; font-size:26px; letter-spacing:-0.01em; }
+    .theme-toggle { background: var(--surface); border: 1px solid var(--card-border); color: var(--text); padding: 10px 12px; border-radius: 12px; cursor: pointer; }
+    .card { position:relative; background: linear-gradient(150deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border: 1px solid var(--card-border); border-radius: var(--radius); padding:18px; box-shadow: 0 14px 40px rgba(0,0,0,0.25); margin-bottom:16px; overflow:hidden; }
+    .card::before{ content:""; position:absolute; inset:0; background: radial-gradient(circle at 15% 15%, rgba(56,189,248,0.12), transparent 40%); opacity:0; transition: opacity .2s ease; }
+    .card:hover::before{ opacity:1; }
+    a { color: var(--accent); text-decoration:none; }
     a:hover { text-decoration: underline; }
-    .section { position: relative; margin-bottom: 24px; background: linear-gradient(180deg,var(--panel-bg), rgba(255,255,255,0.02)); padding: 20px; box-shadow: var(--card-shadow); border-radius: 12px; border: 2px solid var(--card-border); overflow: hidden; }
-    .section::before{ content: ""; position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: linear-gradient(90deg,var(--card-accent), transparent); pointer-events: none; }
-    .section:focus-within { outline: 3px solid rgba(37,99,235,0.10); }
-    .status-up { color: var(--up); font-weight: 700; }
-    .status-down { color: var(--down); font-weight: 700; }
-    .pill { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
-    .pill-up { background: rgba(52,211,153,0.12); color: var(--up); }
-    .pill-down { background: rgba(251,113,133,0.12); color: var(--down); }
-    .pill-na { background: rgba(255,255,255,0.02); color: var(--muted); }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); text-align: left; }
-    th { background: rgba(255,255,255,0.02); font-weight: 600; font-size: 14px; }
-    tr:last-child td { border-bottom: none; }
-    .theme-toggle { float: right; background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--text); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius: 999px; font-weight:700; font-size:12px; border:1px solid rgba(255,255,255,0.08); }
+    .pill-up { background: rgba(52,211,153,0.16); color: var(--up); }
+    .pill-down { background: rgba(248,113,113,0.16); color: var(--down); }
+    .pill-na { background: rgba(148,163,184,0.16); color: var(--muted); }
+    .metrics { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:12px; }
+    .metric { padding:12px; border:1px solid var(--card-border); border-radius:12px; background: rgba(255,255,255,0.02); }
+    .metric .label { color: var(--muted); font-size:12px; }
+    .metric .value { font-size:18px; font-weight:700; }
+    table { width:100%; border-collapse: collapse; margin-top:8px; }
+    th, td { padding:10px 12px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.06); font-size:13px; }
+    th { color: var(--muted); font-weight:600; letter-spacing:0.01em; }
+    tr:last-child td { border-bottom:none; }
+    @media(max-width:640px){ body{padding:18px;} .top{flex-direction:column; align-items:flex-start;} }
   </style>
 </head>
 <body>
-  <div class="section">
-    <a href="/ui">← Back to dashboard</a>
-    <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
-    <h2>{{ site.name }}</h2>
-    <p><strong>URL:</strong> <a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></p>
-    <p><strong>Status:</strong>
-      {% if latest %}
-        <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
-      {% else %}
-        <span class="pill pill-na">N/A</span>
-      {% endif %}
-    </p>
-    <p><strong>Availability (24h):</strong>
-      {% if metrics.availability is not none %}
-        {{ '%.2f' % (metrics.availability * 100) }}%
-      {% else %}N/A{% endif %}
-      {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
-        — SLA {{ metrics.sla_target_per_mille / 10 }}%:
-        {% if metrics.sla_met %}
-          <span class="pill pill-up">OK</span>
-        {% else %}
-          <span class="pill pill-down">BREACH</span>
-        {% endif %}
-      {% endif %}
-    </p>
-  </div>
+  <div class="page">
+    <div class="top">
+      <div>
+        <a class="back" href="/ui">← Back to dashboard</a>
+        <h1>{{ site.name }}</h1>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
+    </div>
 
-  <div class="section">
-    <h3>Recent incidents</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Last status</th>
-          <th>Resolved</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for inc in incidents %}
-        <tr>
-          <td>{{ inc.id }}</td>
-          <td>{{ inc.start_ts }}</td>
-          <td>{{ inc.end_ts if inc.end_ts else '—' }}</td>
-          <td>{{ inc.last_status.value }}</td>
-          <td>{{ 'Yes' if inc.resolved else 'No' }}</td>
-        </tr>
-        {% endfor %}
-        {% if incidents|length == 0 %}
-        <tr><td colspan="5">No incidents</td></tr>
-        {% endif %}
-      </tbody>
-    </table>
+    <div class="card">
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div><strong>URL:</strong> <a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></div>
+        <div><strong>Status:</strong>
+          {% if latest %}
+            <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
+          {% else %}
+            <span class="pill pill-na">N/A</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="label">Availability (24h)</div>
+          <div class="value">{% if metrics.availability is not none %}{{ '%.2f' % (metrics.availability * 100) }}%{% else %}N/A{% endif %}</div>
+        </div>
+        <div class="metric">
+          <div class="label">Uptime</div>
+          <div class="value">{{ '%.1f' % metrics.uptime_seconds }} s</div>
+        </div>
+        <div class="metric">
+          <div class="label">Downtime</div>
+          <div class="value">{{ '%.1f' % metrics.downtime_seconds }} s</div>
+        </div>
+        <div class="metric">
+          <div class="label">SLA</div>
+          <div class="value">
+            {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
+              {{ metrics.sla_target_per_mille / 10 }}% {% if metrics.sla_met %}<span class="pill pill-up">OK</span>{% else %}<span class="pill pill-down">BREACH</span>{% endif %}
+            {% else %}N/A{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 10px 0;">Recent incidents</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Last status</th>
+            <th>Resolved</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inc in incidents %}
+          <tr>
+            <td>{{ inc.id }}</td>
+            <td>{{ inc.start_ts }}</td>
+            <td>{{ inc.end_ts if inc.end_ts else '—' }}</td>
+            <td>{{ inc.last_status.value }}</td>
+            <td>{{ 'Yes' if inc.resolved else 'No' }}</td>
+          </tr>
+          {% endfor %}
+          {% if incidents|length == 0 %}
+          <tr><td colspan="5">No incidents</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
   </div>
   <script>
     (function(){

@@ -4,93 +4,106 @@
   <meta charset="UTF-8" />
   <title>Uptime Dashboard</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root{
-      --bg: #f7f9fb;
-      --panel-bg: #ffffff;
-      --text: #1f2933;
-      --muted: #475569;
-      --accent: #2563eb;
-      --up: #0b8a3c;
-      --down: #c0392b;
-      --card-shadow: 0 1px 4px rgba(16,24,40,0.06);
-      --card-border: #000000; /* strong black border on light theme */
-      --card-accent: rgba(37,99,235,0.18);
-      --card-bg-contrast: #ffffff;
-    }
-    .theme-dark{
-      --bg: #0b1220;
-      --panel-bg: #071124;
-      --text: #e6eef8;
-      --muted: #a6b8d6;
-      --accent: #60a5fa;
+      --bg: #0f172a;
+      --panel: #111827;
+      --surface: rgba(255,255,255,0.02);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
       --up: #34d399;
-      --down: #fb7185;
-      --card-shadow: 0 2px 8px rgba(2,6,23,0.6);
-      --card-border: #000000; /* black border in dark theme as requested */
-      --card-accent: rgba(96,165,250,0.20);
-      --card-bg-contrast: rgba(255,255,255,0.02);
+      --down: #f87171;
+      --border: #0b1220;
+      --card-border: #0a0f1a;
+      --glow: 0 10px 40px rgba(56,189,248,0.18);
+      --radius: 14px;
     }
-    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); }
-    h1 { margin-bottom: 12px; }
-    .theme-toggle { float: right; background: transparent; border: 1px solid rgba(0,0,0,0.06); color: var(--text); padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-    .theme-toggle:focus { outline: 2px solid var(--accent); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-    :root{--card-border: rgba(0,0,0,0.06);} /* fallback */
-    .theme-dark{--card-border: rgba(255,255,255,0.06);} /* dark overrides */
-    .card { position: relative; background: linear-gradient(180deg, var(--panel-bg), var(--card-bg-contrast)); padding: 18px; border-radius: 12px; box-shadow: 0 2px 10px rgba(2,6,23,0.06); border: 2px solid var(--card-border); overflow: hidden; transition: transform .12s ease, box-shadow .16s ease, border-color .12s ease; }
-    .card::before{ content: ""; position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: linear-gradient(90deg, var(--card-accent), rgba(0,0,0,0)); pointer-events: none; }
-    .card:hover { transform: translateY(-6px); box-shadow: 0 18px 50px rgba(2,6,23,0.14); border-color: var(--card-accent); }
-    .card:focus-within { outline: 3px solid rgba(37,99,235,0.10); }
-    .card h2 { margin: 0 0 6px 0; font-size: 18px; }
-    .card .meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
-    .card .metrics { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .metric { background: rgba(255,255,255,0.03); padding: 6px 8px; border-radius: 6px; font-weight: 600; font-size: 13px; }
-    .metric.big { font-size: 18px; padding: 8px 10px; }
-    .status-up { color: var(--up); font-weight: 700; }
-    .status-down { color: var(--down); font-weight: 700; }
-    .pill { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
-    .pill-up { background: rgba(52,211,153,0.12); color: var(--up); }
-    .pill-down { background: rgba(251,113,133,0.12); color: var(--down); }
-    .pill-na { background: rgba(255,255,255,0.02); color: var(--muted); }
-    a { color: var(--accent); text-decoration: none; }
+    .theme-dark{ /* keep variables symmetrical for toggle */ }
+    body { margin:0; padding:32px; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), transparent 30%), radial-gradient(circle at 80% 0%, rgba(14,165,233,0.08), transparent 26%), var(--bg); color: var(--text); font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif; }
+    .page { max-width: 1200px; margin: 0 auto; }
+    .topbar { display:flex; align-items:center; justify-content: space-between; gap:16px; margin-bottom:24px; }
+    h1 { margin:0; font-size: 28px; letter-spacing:-0.02em; }
+    .sub { color: var(--muted); font-size: 14px; }
+    .theme-toggle { background: var(--surface); border: 1px solid var(--card-border); color: var(--text); padding: 10px 12px; border-radius: 12px; cursor: pointer; transition: border-color .15s ease, transform .12s ease; }
+    .theme-toggle:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .card { position:relative; background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border: 1px solid var(--card-border); border-radius: var(--radius); padding:18px; box-shadow: 0 14px 40px rgba(0,0,0,0.25); overflow:hidden; transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease; }
+    .card::before { content:""; position:absolute; inset:0; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.12), transparent 45%); opacity:0; transition: opacity .2s ease; }
+    .card:hover { transform: translateY(-6px); box-shadow: var(--glow), 0 20px 50px rgba(0,0,0,0.35); border-color: var(--accent-strong); }
+    .card:hover::before { opacity:1; }
+    .meta { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+    .name { font-weight:700; font-size:18px; letter-spacing:-0.01em; }
+    .link { color: var(--muted); font-size:13px; word-break: break-word; }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius: 999px; font-weight:700; font-size:12px; letter-spacing:0.01em; border:1px solid rgba(255,255,255,0.08); }
+    .pill-up { background: rgba(52,211,153,0.16); color: var(--up); }
+    .pill-down { background: rgba(248,113,113,0.16); color: var(--down); }
+    .pill-na { background: rgba(148,163,184,0.14); color: var(--muted); }
+    .metrics { display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:10px; }
+    .metric { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 12px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; }
+    .metric .label { color: var(--muted); font-size:12px; letter-spacing:0.01em; }
+    .metric .value { font-weight:700; font-size:16px; }
+    .sla { display:flex; align-items:center; gap:8px; }
+    a { color: var(--accent); text-decoration:none; }
     a:hover { text-decoration: underline; }
+    @media(max-width:640px){ body{padding:18px;} .topbar{flex-direction:column; align-items:flex-start;} }
   </style>
 </head>
 <body>
-  <h1>Uptime Dashboard <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button></h1>
-  <div class="grid">
-    {% for item in items %}
-    {% set site = item.site %}
-    {% set latest = item.latest %}
-    {% set metrics = item.metrics %}
-    <div class="card">
-      <h2><a href="/ui/sites/{{site.id}}">{{ site.name }}</a></h2>
-      <div class="meta"><a href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a></div>
-      <div style="margin-bottom:8px;">
-        {% if latest %}
-          <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
-        {% else %}
-          <span class="pill pill-na">N/A</span>
-        {% endif %}
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <h1>Uptime Dashboard</h1>
+        <div class="sub">Live status and SLA at a glance</div>
       </div>
-      <div class="metrics">
-        <div class="metric big">
-          {% if metrics.availability is not none %}
-            {{ '%.2f' % (metrics.availability * 100) }}%
-          {% else %}N/A{% endif %}
-        </div>
-        <div class="metric">Uptime: {{ '%.1f' % metrics.uptime_seconds }} s</div>
-        <div class="metric">Downtime: {{ '%.1f' % metrics.downtime_seconds }} s</div>
-        <div class="metric">
-          {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
-            SLA: {{ metrics.sla_target_per_mille / 10 }}% 
-            {% if metrics.sla_met %}<span class="pill pill-up">OK</span>{% else %}<span class="pill pill-down">BREACH</span>{% endif %}
-          {% else %}SLA: N/A{% endif %}
-        </div>
-      </div>
+      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
     </div>
-    {% endfor %}
+
+    <div class="grid">
+      {% for item in items %}
+      {% set site = item.site %}
+      {% set latest = item.latest %}
+      {% set metrics = item.metrics %}
+      <div class="card">
+        <div class="meta">
+          <div class="name"><a href="/ui/sites/{{site.id}}">{{ site.name }}</a></div>
+          <a class="link" href="{{ site.url }}" target="_blank" rel="noopener">{{ site.url }}</a>
+        </div>
+        <div>
+          {% if latest %}
+            <span class="pill {{ 'pill-up' if latest.status.value == 'UP' else 'pill-down' }}">{{ latest.status.value }}</span>
+          {% else %}
+            <span class="pill pill-na">N/A</span>
+          {% endif %}
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="label">Availability (24h)</div>
+            <div class="value">{% if metrics.availability is not none %}{{ '%.2f' % (metrics.availability * 100) }}%{% else %}N/A{% endif %}</div>
+          </div>
+          <div class="metric">
+            <div class="label">Uptime</div>
+            <div class="value">{{ '%.1f' % metrics.uptime_seconds }} s</div>
+          </div>
+          <div class="metric">
+            <div class="label">Downtime</div>
+            <div class="value">{{ '%.1f' % metrics.downtime_seconds }} s</div>
+          </div>
+          <div class="metric">
+            <div class="label">SLA</div>
+            <div class="value sla">
+              {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
+                {{ metrics.sla_target_per_mille / 10 }}% {% if metrics.sla_met %}<span class="pill pill-up">OK</span>{% else %}<span class="pill pill-down">BREACH</span>{% endif %}
+              {% else %}N/A{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </div>
+
   <script>
     (function(){
       const key = 'uptime-theme';

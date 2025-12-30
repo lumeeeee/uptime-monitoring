@@ -4,38 +4,80 @@
   <meta charset="UTF-8" />
   <title>Metrics</title>
   <style>
-    body{font-family:Arial, sans-serif; margin:24px; background:var(--bg, #f7f9fb); color:var(--text,#1f2933)}
-    h1{margin-bottom:12px}
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+    :root{
+      --bg: #0f172a;
+      --panel: #0b1220;
+      --surface: rgba(255,255,255,0.02);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --border: #0a0f1a;
+      --radius: 14px;
+    }
+    body{margin:0; padding:28px; background: radial-gradient(circle at 18% 10%, rgba(56,189,248,0.08), transparent 30%), radial-gradient(circle at 82% 8%, rgba(14,165,233,0.1), transparent 32%), var(--bg); color: var(--text); font-family: 'Space Grotesk','Inter',system-ui,sans-serif;}
     .page{max-width:1200px;margin:0 auto;}
-    .row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
-    .box{background:#fff;padding:16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1;min-width:320px}
-    .chart-holder{position:relative;width:100%;height:360px;}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+    h1{margin:0;font-size:26px;letter-spacing:-0.01em;}
+    .theme-toggle{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;}
+    .row{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap;}
+    .box{flex:1;min-width:320px; background: linear-gradient(150deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border:1px solid var(--border); border-radius: var(--radius); padding:16px; box-shadow: 0 14px 40px rgba(0,0,0,0.25); position:relative; overflow:hidden; }
+    .box::before{content:"";position:absolute;inset:0;background: radial-gradient(circle at 20% 15%, rgba(56,189,248,0.14), transparent 45%);opacity:0;transition:opacity .2s ease;}
+    .box:hover::before{opacity:1;}
+    .chart-holder{position:relative;width:100%;height:360px;margin-top:10px;}
     canvas{position:absolute;inset:0;width:100% !important;height:100% !important}
+    .controls{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+    select{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);}
     @media(max-width:900px){.row{flex-direction:column}}
-    .controls{margin-bottom:8px;display:flex;align-items:center;gap:8px;}
-    select{padding:6px 8px;border-radius:6px;border:1px solid #cbd5e1;}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="page">
-  <h1>Metrics</h1>
-  <div class="row">
-    <div class="box">
-      <h3>Uptime (24h) per site</h3>
-      <div class="chart-holder"><canvas id="uptimeChart" width="600" height="360"></canvas></div>
+    <div class="top">
+      <h1>Metrics</h1>
+      <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
     </div>
-    <div class="box">
-      <div class="controls">
-        <h3 style="margin:0;">Recent latencies</h3>
-        <select id="site-select"></select>
+
+    <div class="row">
+      <div class="box">
+        <h3 style="margin:0;">Uptime (24h) per site</h3>
+        <div class="chart-holder"><canvas id="uptimeChart" width="600" height="360"></canvas></div>
       </div>
-      <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
+      <div class="box">
+        <div class="controls">
+          <h3 style="margin:0;">Recent latencies</h3>
+          <select id="site-select"></select>
+        </div>
+        <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
+      </div>
     </div>
-  </div>
   </div>
 
   <script>
+    (function(){
+      const key = 'uptime-theme';
+      const btn = document.getElementById('theme-toggle');
+      function apply(theme){
+        if(theme === 'dark') document.documentElement.classList.add('theme-dark');
+        else document.documentElement.classList.remove('theme-dark');
+        if(btn){
+          btn.setAttribute('aria-pressed', theme === 'dark');
+          btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+      }
+      const stored = localStorage.getItem(key) || 'light';
+      apply(stored);
+      if(btn){
+        btn.addEventListener('click', ()=>{
+          const next = (localStorage.getItem(key) || 'light') === 'dark' ? 'light' : 'dark';
+          localStorage.setItem(key, next);
+          apply(next);
+        });
+      }
+    })();
+
     const labels = {{ labels | tojson }};
     const uptimeValues = {{ uptime_values | tojson }};
     const latencySeries = {{ latency_series | tojson }};
@@ -50,7 +92,8 @@
         datasets: [{
           label: 'Uptime % (24h)',
           data: uptimeValues,
-          backgroundColor: 'rgba(37,99,235,0.7)'
+          backgroundColor: 'rgba(56,189,248,0.6)',
+          borderRadius: 8,
         }]
       },
       options: {responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true, max:100}}}
@@ -63,7 +106,6 @@
       year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'
     }));
 
-    // populate select
     latencySeries.forEach((s, idx) => {
       const opt = document.createElement('option');
       opt.value = s.site_id;
@@ -83,8 +125,8 @@
         datasets: [{
           label: 'Latency ms',
           data: current.values,
-          borderColor: 'rgba(16,185,129,0.9)',
-          backgroundColor: 'rgba(16,185,129,0.15)',
+          borderColor: 'rgba(94,234,212,0.9)',
+          backgroundColor: 'rgba(94,234,212,0.18)',
           fill: true,
           tension: 0.3,
         }]

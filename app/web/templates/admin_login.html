@@ -4,38 +4,32 @@
   <meta charset="UTF-8" />
   <title>Admin Login</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root{
-      --bg: #f7f9fb;
-      --panel-bg: #ffffff;
-      --text: #1f2933;
-      --muted: #475569;
-      --accent: #2563eb;
-      --card-border: #000000;
-      --card-accent: rgba(37,99,235,0.18);
+      --bg: #0f172a;
+      --panel: #0b1220;
+      --surface: rgba(255,255,255,0.02);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --border: #0a0f1a;
+      --radius: 14px;
     }
-    .theme-dark{
-      --bg: #0b1220;
-      --panel-bg: #071124;
-      --text: #e6eef8;
-      --muted: #a6b8d6;
-      --accent: #60a5fa;
-      --card-border: #000000;
-      --card-accent: rgba(96,165,250,0.20);
-    }
-    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 90vh; }
-    .shell { width: 420px; background: linear-gradient(180deg, var(--panel-bg), rgba(255,255,255,0.02)); border-radius: 14px; border: 2px solid var(--card-border); padding: 22px; box-shadow: 0 12px 30px rgba(2,6,23,0.18); position: relative; overflow: hidden; }
-    .shell::before{ content: ""; position: absolute; left: 0; top: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--card-accent), transparent); pointer-events: none; }
-    h2 { margin: 0 0 4px 0; }
-    p { margin: 0 0 12px 0; color: var(--muted); }
+    body { font-family: 'Space Grotesk','Inter',system-ui,sans-serif; margin: 0; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), transparent 32%), radial-gradient(circle at 80% 0%, rgba(14,165,233,0.1), transparent 30%), var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .shell { width: 420px; background: linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; box-shadow: 0 18px 50px rgba(0,0,0,0.35); position: relative; overflow: hidden; }
+    .shell::before{ content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.14), transparent 45%); opacity: 0.9; pointer-events: none; }
+    h2 { margin: 0; font-size: 24px; letter-spacing: -0.01em; }
+    p { margin: 6px 0 12px 0; color: var(--muted); }
     label { display: block; font-weight: 600; margin-bottom: 6px; }
-    input { width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); font-size: 14px; background: rgba(255,255,255,0.9); color: var(--text); }
-    .theme-dark input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: var(--text); }
-    button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 8px 22px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .12s ease; }
-    button:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(37,99,235,0.35); }
-    .error { background: rgba(192,57,43,0.12); color: #c0392b; border: 1px solid rgba(192,57,43,0.4); padding: 10px; border-radius: 8px; margin-bottom: 12px; font-weight: 600; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .theme-toggle { background: transparent; border: 1px solid rgba(0,0,0,0.08); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
-    .links { display: flex; justify-content: space-between; margin-top: 12px; font-size: 14px; }
+    input { width: 100%; padding: 12px; margin-bottom: 14px; border-radius: 10px; border: 1px solid var(--border); font-size: 14px; background: rgba(255,255,255,0.03); color: var(--text); }
+    button { width: 100%; padding: 12px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #0b1220; font-weight: 700; cursor: pointer; box-shadow: 0 10px 30px rgba(56,189,248,0.25); transition: transform .1s ease, box-shadow .15s ease; }
+    button:hover { transform: translateY(-1px); box-shadow: 0 14px 36px rgba(56,189,248,0.35); }
+    .error { background: rgba(248,113,113,0.14); color: #fecdd3; border: 1px solid rgba(248,113,113,0.4); padding: 10px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; position: relative; z-index: 1; }
+    .theme-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 10px; cursor: pointer; }
+    .content { position: relative; z-index: 1; }
+    .links { display: flex; justify-content: space-between; margin-top: 12px; font-size: 14px; color: var(--muted); }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
   </style>
@@ -46,18 +40,20 @@
       <h2>Admin login</h2>
       <button id="theme-toggle" class="theme-toggle" aria-pressed="false">🌙 Dark</button>
     </div>
-    <p>Sign in with the admin credentials configured via env vars.</p>
-    {% if error %}<div class="error">Invalid username or password.</div>{% endif %}
-    <form method="post" action="/admin/login">
-      <label for="username">Username</label>
-      <input id="username" name="username" autocomplete="username" required />
-      <label for="password">Password</label>
-      <input id="password" type="password" name="password" autocomplete="current-password" required />
-      <button type="submit">Sign in</button>
-    </form>
-    <div class="links">
-      <span>Need creds? Set ADMIN_USERNAME / ADMIN_PASSWORD.</span>
-      <a href="/ui">Back to dashboard</a>
+    <div class="content">
+      <p>Sign in with the admin credentials configured via env vars.</p>
+      {% if error %}<div class="error">Invalid username or password.</div>{% endif %}
+      <form method="post" action="/admin/login">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required />
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" autocomplete="current-password" required />
+        <button type="submit">Sign in</button>
+      </form>
+      <div class="links">
+        <span>Need creds? Set ADMIN_USERNAME / ADMIN_PASSWORD.</span>
+        <a href="/ui">Back to dashboard</a>
+      </div>
     </div>
   </div>
   <script>

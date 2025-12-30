@@ -4,50 +4,44 @@
   <meta charset="UTF-8" />
   <title>Admin Sites</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     :root{
-      --bg: #f7f9fb;
-      --panel-bg: #ffffff;
-      --text: #1f2933;
-      --muted: #475569;
-      --accent: #2563eb;
-      --up: #0b8a3c;
-      --card-border: #000000;
-      --card-accent: rgba(37,99,235,0.18);
-    }
-    .theme-dark{
-      --bg: #0b1220;
-      --panel-bg: #071124;
-      --text: #e6eef8;
-      --muted: #a6b8d6;
-      --accent: #60a5fa;
+      --bg: #0f172a;
+      --panel: #0b1220;
+      --surface: rgba(255,255,255,0.02);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
       --up: #34d399;
-      --card-border: #000000;
-      --card-accent: rgba(96,165,250,0.20);
+      --border: #0a0f1a;
+      --radius: 14px;
     }
-    body { font-family: Arial, sans-serif; margin: 24px; background: var(--bg); color: var(--text); }
+    body { font-family: 'Space Grotesk','Inter',system-ui,sans-serif; margin: 0; padding: 26px; background: radial-gradient(circle at 18% 12%, rgba(56,189,248,0.08), transparent 32%), radial-gradient(circle at 78% 8%, rgba(14,165,233,0.1), transparent 30%), var(--bg); color: var(--text); }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-    .theme-toggle { background: transparent; border: 1px solid rgba(0,0,0,0.08); color: var(--text); padding: 6px 10px; border-radius: 8px; cursor: pointer; }
-    .panel { position: relative; background: linear-gradient(180deg, var(--panel-bg), rgba(255,255,255,0.02)); border: 2px solid var(--card-border); border-radius: 14px; padding: 18px; box-shadow: 0 10px 26px rgba(2,6,23,0.14); overflow: hidden; margin-bottom: 18px; }
-    .panel::before{ content: ""; position: absolute; left: 0; top: 0; height: 6px; width: 100%; background: linear-gradient(90deg, var(--card-accent), transparent); pointer-events: none; }
-    h2 { margin: 0 0 8px 0; }
+    .theme-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+    .panel { position: relative; background: linear-gradient(150deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: 0 16px 44px rgba(0,0,0,0.28); overflow: hidden; margin-bottom: 18px; }
+    .panel::before{ content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 18% 20%, rgba(56,189,248,0.14), transparent 45%); opacity: 0; transition: opacity .2s ease; }
+    .panel:hover::before{ opacity: 1; }
+    h2 { margin: 0 0 12px 0; letter-spacing:-0.01em; }
     table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.06); text-align: left; }
-    th { background: rgba(0,0,0,0.02); font-weight: 700; }
-    .theme-dark th, .theme-dark td { border-color: rgba(255,255,255,0.08); }
-    .theme-dark th { background: rgba(255,255,255,0.04); }
-    .pill { display: inline-block; padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 700; }
-    .pill-up { background: rgba(52,211,153,0.12); color: var(--up); }
-    .pill-inactive { background: rgba(148,163,184,0.18); color: var(--muted); }
-    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 13px; }
+    th { color: var(--muted); font-weight: 700; letter-spacing:0.01em; }
+    tr:last-child td { border-bottom: none; }
+    .pill { display: inline-block; padding: 6px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; border:1px solid rgba(255,255,255,0.08); }
+    .pill-up { background: rgba(52,211,153,0.16); color: var(--up); }
+    .pill-inactive { background: rgba(148,163,184,0.16); color: var(--muted); }
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; position:relative; z-index:1; }
     label { font-weight: 600; font-size: 13px; }
-    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.9); color: var(--text); }
-    .theme-dark input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); color: var(--text); }
+    input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text); }
     .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-    .btn { padding: 11px 16px; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 22px rgba(37,99,235,0.25); transition: transform .08s ease, box-shadow .12s ease; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(37,99,235,0.35); }
+    .btn { padding: 11px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #0b1220; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 28px rgba(56,189,248,0.3); transition: transform .08s ease, box-shadow .12s ease; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(56,189,248,0.36); }
     .muted { color: var(--muted); }
+    .del-btn { background:#ef4444; border:none; color:#fff; padding:8px 10px; border-radius:10px; cursor:pointer; box-shadow:0 8px 20px rgba(239,68,68,0.25); }
+    @media(max-width:720px){ body{padding:18px;} .header{flex-direction:column; align-items:flex-start;} }
   </style>
 </head>
 <body>
@@ -81,13 +75,13 @@
           <td>{% if s.is_active %}<span class="pill pill-up">Yes</span>{% else %}<span class="pill pill-inactive">No</span>{% endif %}</td>
           <td>
             <form method="post" action="/admin/sites/{{ s.id }}/delete" onsubmit="return confirm('Remove site from monitoring?');" style="display:inline">
-              <button type="submit" style="background:#e53e3e;border:none;color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer;">Delete</button>
+              <button type="submit" class="del-btn">Delete</button>
             </form>
           </td>
         </tr>
         {% endfor %}
         {% if sites|length == 0 %}
-        <tr><td colspan="3" class="muted">No sites yet.</td></tr>
+        <tr><td colspan="4" class="muted">No sites yet.</td></tr>
         {% endif %}
       </tbody>
     </table>
