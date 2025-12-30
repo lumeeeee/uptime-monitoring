@@ -1,11 +1,9 @@
-version: "3.9"
-
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: uptime
-      POSTGRES_PASSWORD: uptime
+      POSTGRES_PASSWORD: secret
       POSTGRES_DB: uptime
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -16,10 +14,11 @@ services:
       retries: 5
 
   api:
-    build: .
-    command: /usr/local/bin/python -m uvicorn app.api.main:app --host 0.0.0.0 --port 8000
+    build:
+      context: .
+      dockerfile: Dockerfile.api
     environment:
-      DATABASE_URL: postgresql+asyncpg://uptime:uptime@db:5432/uptime
+      DATABASE_URL: postgresql+asyncpg://uptime:secret@db:5432/uptime
       API_HOST: 0.0.0.0
       API_PORT: 8000
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
@@ -32,10 +31,11 @@ services:
       - "8000:8000"
 
   worker:
-    build: .
-    command: /usr/local/bin/python -m app.workers.runner
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     environment:
-      DATABASE_URL: postgresql+asyncpg://uptime:uptime@db:5432/uptime
+      DATABASE_URL: postgresql+asyncpg://uptime:secret@db:5432/uptime
       CHECKER_CONCURRENCY: 20
       POLL_INTERVAL_SEC: 1.0
       LEASE_TIMEOUT_SEC: 30.0
