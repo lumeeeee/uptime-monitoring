@@ -25,9 +25,12 @@ class SiteService:
         sla_target: int = 999,
         is_active: bool = True,
     ) -> Target:
+        # Ensure URL is stored as plain string (pydantic AnyUrl/Url may be passed)
+        url_value = str(url) if url is not None else url
+
         target = Target(
             name=name,
-            url=url,
+            url=url_value,
             check_interval_sec=check_interval_sec,
             timeout_ms=timeout_ms,
             retry_count=retry_count,
@@ -80,7 +83,7 @@ class SiteService:
         if name is not None:
             target.name = name
         if url is not None:
-            target.url = url
+            target.url = str(url)
         if check_interval_sec is not None:
             target.check_interval_sec = check_interval_sec
         if timeout_ms is not None:
