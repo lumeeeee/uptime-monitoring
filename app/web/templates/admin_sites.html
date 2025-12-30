@@ -88,11 +88,13 @@
         const toggle = document.querySelector('.nav-toggle');
         const overlay = document.querySelector('.sidebar-overlay');
         const body = document.body;
-        const open = () => body.classList.add('sidebar-open');
-        const close = () => body.classList.remove('sidebar-open');
-        toggle?.addEventListener('click', () => body.classList.contains('sidebar-open') ? close() : open());
-        overlay?.addEventListener('click', close);
-        window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') close(); });
+        const setOpen = (v) => {
+          if(v) body.classList.add('sidebar-open'); else body.classList.remove('sidebar-open');
+          console.debug('sidebar-open set to', body.classList.contains('sidebar-open'));
+        };
+        toggle?.addEventListener('click', () => setOpen(!body.classList.contains('sidebar-open')));
+        overlay?.addEventListener('click', () => setOpen(false));
+        window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') setOpen(false); });
         const path = window.location.pathname;
         document.querySelectorAll('.nav-link').forEach(link => {
           const base = link.dataset.path;
