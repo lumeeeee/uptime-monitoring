@@ -212,6 +212,49 @@ async def metrics_csv(session: AsyncSession = Depends(get_db_session)) -> Stream
 async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> StreamingResponse:
     data = await _collect_metrics(session)
 
+    def humanize_seconds(seconds: float | int | None) -> str:
+        if seconds is None:
+            return ""
+        seconds = int(seconds)
+        days, rem = divmod(seconds, 86400)
+        hours, rem = divmod(rem, 3600)
+        minutes, _ = divmod(rem, 60)
+        parts = []
+        if days:
+            parts.append(f"{days}д")
+        if hours:
+            parts.append(f"{hours}ч")
+        parts.append(f"{minutes}м")
+        return " ".join(parts)
+
+    def draw_bar_chart(title: str, items: list[tuple[str, float]], max_value: float, color: tuple[int, int, int]):
+        nonlocal font_name
+        if not items:
+            return
+        pdf.set_font(font_name, 'B', 11)
+        pdf.cell(0, 8, title, ln=1)
+        pdf.set_font(font_name, '', 9)
+        chart_width = 110
+        label_width = 70
+        bar_height = 6
+        spacing = 2
+        max_value = max(max_value, 1)
+        start_x = pdf.get_x()
+        for label, value in items:
+            value = max(0.0, value)
+            label_text = (label or '')
+            label_text = label_text if len(label_text) <= 30 else label_text[:27] + '...'
+            bar_w = chart_width * min(value / max_value, 1)
+            pdf.cell(label_width, bar_height, label_text, border=0)
+            x_bar = pdf.get_x()
+            y_bar = pdf.get_y()
+            pdf.set_fill_color(*color)
+            pdf.rect(x_bar, y_bar + 1, bar_w, bar_height - 2, 'F')
+            pdf.set_xy(x_bar + chart_width + 2, y_bar)
+            pdf.cell(15, bar_height, f"{value:.1f}", border=0)
+            pdf.set_xy(start_x, y_bar + bar_height + spacing)
+        pdf.ln(2)
+
     pdf = FPDF(format='A4')
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
@@ -250,32 +293,51 @@ async def metrics_pdf(session: AsyncSession = Depends(get_db_session)) -> Stream
     pdf.cell(0, 10, title_text, ln=1)
     pdf.ln(4)
 
-    # Table header
+    # Charts (top 10 in current order)
+    availability_items = [(lbl, val or 0.0) for lbl, val in zip(data["labels"], data["uptime_values"])][:10]
+    error_items = [(lbl, val or 0.0) for lbl, val in zip(data["labels"], data["error_rates"])][:10]
+    draw_bar_chart('Доступность 24ч, %' if font_registered else 'Availability 24h, %', availability_items, max([v for _, v in availability_items] + [100]), (14, 165, 233))
+    draw_bar_chart('Ошибки, %' if font_registered else 'Errors, %', error_items, max([v for _, v in error_items] + [100]), (239, 68, 68))
+    pdf.ln(2)
+
+    # Table header (fit within ~180mm width)
     pdf.set_font(font_name, 'B', 10)
-    col_widths = [40, 60, 24, 22, 22, 18, 14, 20]
+    col_widths = [32, 50, 20, 18, 18, 16, 12, 14]
     pdf.set_fill_color(14, 165, 233)
     for w, label in zip(col_widths, header_labels):
         pdf.cell(w, 8, label, border=1, fill=True)
     pdf.ln()
 
-    # Table rows (simple, no wrapping to avoid API differences)
+    # Table rows with basic wrapping using fpdf2 new_x/new_y to avoid overlap
     pdf.set_font(font_name, '', 9)
+    line_height = 6
     for row in data['rows']:
         vals = [
-            str(row.get('name', ''))[:40],
-            str(row.get('url', ''))[:80],
+            str(row.get('name', '')),
+            str(row.get('url', '')),
             f"{row['availability_pct']:.2f}" if row.get('availability_pct') is not None else '',
-            str(row.get('uptime_seconds', '')),
-            str(row.get('downtime_seconds', '')),
+            humanize_seconds(row.get('uptime_seconds')),
+            humanize_seconds(row.get('downtime_seconds')),
             f"{row['sla_target_pct']:.1f}" if row.get('sla_target_pct') is not None else '',
             ('Да' if row.get('sla_met') else 'Нет') if font_registered else ('Yes' if row.get('sla_met') else 'No'),
             f"{row['error_rate_pct']:.2f}",
         ]
+
+        # Calculate max height needed for wrapped text in the row
+        heights = []
         for w, v in zip(col_widths, vals):
-            text = v if isinstance(v, str) else str(v)
-            # truncate to avoid overflow
-            pdf.cell(w, 8, text[:int(w * 2)], border=1)
-        pdf.ln()
+            lines = pdf.multi_cell(w, line_height, v, border=0, split_only=True)
+            h = max(line_height, len(lines) * line_height)
+            heights.append(h)
+        row_height = max(heights) if heights else line_height
+
+        x_start = pdf.get_x()
+        y_start = pdf.get_y()
+        for w, v, h in zip(col_widths, vals, heights):
+            # draw cell and stay on same row
+            pdf.multi_cell(w, line_height, v, border=1, new_x="RIGHT", new_y="TOP", max_line_height=line_height)
+        # move to next line
+        pdf.set_xy(x_start, y_start + row_height)
 
     try:
         pdf_output = pdf.output(dest='S')
