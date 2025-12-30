@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Metrics</title>
+  <style>
+    body{font-family:Arial, sans-serif; margin:24px; background:var(--bg, #f7f9fb); color:var(--text,#1f2933)}
+    h1{margin-bottom:12px}
+    .row{display:flex;gap:20px;align-items:flex-start}
+    .box{background:#fff;padding:16px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06);flex:1}
+    canvas{width:100% !important;height:320px !important}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Metrics</h1>
+  <div class="row">
+    <div class="box">
+      <h3>Uptime (24h) per site</h3>
+      <canvas id="uptimeChart"></canvas>
+    </div>
+    <div class="box">
+      <h3>Recent latencies — {{ selected_name }}</h3>
+      <canvas id="latencyChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const labels = {{ labels | tojson }};
+    const uptimeValues = {{ uptime_values | tojson }};
+    const latencyLabels = {{ latency_labels | tojson }};
+    const latencyValues = {{ latency_values | tojson }};
+
+    const ctx = document.getElementById('uptimeChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Uptime % (24h)',
+          data: uptimeValues,
+          backgroundColor: 'rgba(37,99,235,0.7)'
+        }]
+      },
+      options: {responsive:true, scales:{y:{beginAtZero:true, max:100}}}
+    });
+
+    const ctx2 = document.getElementById('latencyChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: latencyLabels,
+        datasets: [{
+          label: 'Latency ms',
+          data: latencyValues,
+          borderColor: 'rgba(16,185,129,0.9)',
+          backgroundColor: 'rgba(16,185,129,0.15)',
+          fill: true,
+          tension: 0.3,
+        }]
+      },
+      options: {responsive:true, scales:{y:{beginAtZero:true}}}
+    });
+  </script>
+</body>
+</html>

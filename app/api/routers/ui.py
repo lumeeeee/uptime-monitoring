@@ -12,6 +12,8 @@ from app.services.incidents import IncidentService
 from app.services.metrics import MetricsService
 from app.services.sites import SiteService
 from app.services.status_history import StatusHistoryService
+from app.db.models import CheckResult
+from sqlalchemy import asc, desc, select
 
 router = APIRouter(prefix="/ui", tags=["ui"])
 templates = Jinja2Templates(directory="app/web/templates")
@@ -70,5 +72,45 @@ async def site_detail(
             "latest": latest,
             "metrics": metrics,
             "incidents": incidents,
+        },
+    )
+
+
+@router.get("/metrics", response_class=HTMLResponse)
+async def metrics_page(request: Request, session: AsyncSession = Depends(get_db_session)) -> HTMLResponse:
+    site_service = SiteService(session)
+    metrics_service = MetricsService(session)
+
+    sites = await site_service.list(limit=500)
+    labels: list[str] = []
+    uptime_values: list[float] = []
+    # collect per-site uptime (24h)
+    for site in sites:
+        labels.append(site.name)
+        m = await metrics_service.uptime_window(site.id, window_hours=24)
+        uptime_values.append((m.get("availability") or 0.0) * 100 if m.get("availability") is not None else 0.0)
+
+    # pick first site for latency timeseries sample
+    latency_labels: list[str] = []
+    latency_values: list[float] = []
+    selected_name = sites[0].name if sites else ""
+    if sites:
+        r = await session.scalars(
+            select(CheckResult).where(CheckResult.target_id == sites[0].id).order_by(asc(CheckResult.checked_at)).limit(100)
+        )
+        checks = list(r)
+        for c in checks:
+            latency_labels.append(c.checked_at.isoformat())
+            latency_values.append(c.latency_ms or 0.0)
+
+    return templates.TemplateResponse(
+        "metrics.html",
+        {
+            "request": request,
+            "labels": labels,
+            "uptime_values": uptime_values,
+            "latency_labels": latency_labels,
+            "latency_values": latency_values,
+            "selected_name": selected_name,
         },
     )
