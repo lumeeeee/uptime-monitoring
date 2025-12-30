@@ -23,7 +23,7 @@
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
     .theme-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 10px; border-radius: 10px; cursor: pointer; }
     .panel { position: relative; background: linear-gradient(150deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: 0 16px 44px rgba(0,0,0,0.28); overflow: hidden; margin-bottom: 18px; }
-    .panel::before{ content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 18% 20%, rgba(56,189,248,0.14), transparent 45%); opacity: 0; transition: opacity .2s ease; }
+    .panel::before{ content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 18% 20%, rgba(56,189,248,0.14), transparent 45%); opacity: 0; transition: opacity .2s ease; pointer-events: none; }
     .panel:hover::before{ opacity: 1; }
     h2 { margin: 0 0 12px 0; letter-spacing:-0.01em; }
     table { border-collapse: collapse; width: 100%; }
@@ -33,14 +33,16 @@
     .pill { display: inline-block; padding: 6px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; border:1px solid rgba(255,255,255,0.08); }
     .pill-up { background: rgba(52,211,153,0.16); color: var(--up); }
     .pill-inactive { background: rgba(148,163,184,0.16); color: var(--muted); }
-    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; position:relative; z-index:1; }
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; position:relative; z-index:1; align-items:start; }
+    form > div { min-width: 0; }
     label { font-weight: 600; font-size: 13px; }
-    input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text); }
+    input { box-sizing: border-box; width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text); }
     .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
     .btn { padding: 11px 16px; background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #0b1220; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 28px rgba(56,189,248,0.3); transition: transform .08s ease, box-shadow .12s ease; }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 34px rgba(56,189,248,0.36); }
     .muted { color: var(--muted); }
     .del-btn { background:#ef4444; border:none; color:#fff; padding:8px 10px; border-radius:10px; cursor:pointer; box-shadow:0 8px 20px rgba(239,68,68,0.25); }
+    @media(max-width:900px){ form { grid-template-columns: 1fr; } }
     @media(max-width:720px){ body{padding:18px;} .header{flex-direction:column; align-items:flex-start;} form { grid-template-columns: 1fr; } }
   </style>
 </head>
