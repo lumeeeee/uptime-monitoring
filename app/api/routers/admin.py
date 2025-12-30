@@ -113,6 +113,14 @@ async def admin_add_site(
     sla_target: int | None = Form(None),
 ):
     svc = SiteService(session)
+    # convert SLA from percent (form input 0-100) to per-mille stored value (0-1000)
+    sla_per_mille = None
+    if sla_target is not None:
+        try:
+            sla_per_mille = int(sla_target) * 10
+        except Exception:
+            sla_per_mille = None
+
     target = await svc.create(
         name=name,
         url=url,
@@ -120,7 +128,7 @@ async def admin_add_site(
         timeout_ms=timeout_ms,
         retry_count=retry_count,
         retry_backoff_ms=retry_backoff_ms,
-        sla_target=sla_target,
+        sla_target=sla_per_mille,
     )
     # ensure scheduler entry exists so worker will pick it up immediately
     session.add(SchedulerState(target_id=target.id, next_run_at=datetime.now(timezone.utc)))
