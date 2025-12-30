@@ -108,6 +108,7 @@
       <table>
         <thead>
           <tr>
+            <th>№</th>
             <th>ID</th>
             <th>Начало</th>
             <th>Окончание</th>
@@ -118,6 +119,7 @@
         <tbody>
           {% for inc in incidents %}
           <tr>
+            <td>{{ loop.index }}</td>
             <td>{{ inc.id }}</td>
             <td>{{ inc.start_ts }}</td>
             <td>{{ inc.end_ts if inc.end_ts else '—' }}</td>
@@ -126,7 +128,7 @@
           </tr>
           {% endfor %}
           {% if incidents|length == 0 %}
-          <tr><td colspan="5">No incidents</td></tr>
+          <tr><td colspan="6">Инциденты отсутствуют</td></tr>
           {% endif %}
         </tbody>
       </table>
