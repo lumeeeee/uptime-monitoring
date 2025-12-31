@@ -118,7 +118,13 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             if found:
                 cfg = found.config or {}
                 cfg_text = "\n".join(f"{k}: {v}" for k, v in cfg.items()) if cfg else "(по умолчанию)"
-                msg = f"Ваши настройки:\n{cfg_text}"
+                example = (
+                    "Примеры использования:\n"
+                    "/settings incident_id on — показывать номер инцидента\n"
+                    "/settings checked_at off — не показывать время проверки\n"
+                    "/settings parse_mode Markdown — форматировать сообщения как Markdown\n"
+                )
+                msg = f"Ваши настройки:\n{cfg_text}\n\n{example}"
             else:
                 msg = "Вы не подписаны. Отправьте /start чтобы подписаться."
             if settings.telegram_bot_token:
