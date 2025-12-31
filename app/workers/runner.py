@@ -49,7 +49,7 @@ class MonitoringWorker:
         self._worker_id = f"worker-{uuid.uuid4()}"
         self._semaphore = asyncio.Semaphore(settings.checker_concurrency)
         self._alert_sender: TelegramNotifier | None = None
-        if settings.telegram_bot_token and settings.telegram_chat_id:
+        if settings.telegram_bot_token:
             try:
                 self._alert_sender = TelegramNotifier()
             except Exception:

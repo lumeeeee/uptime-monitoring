@@ -36,7 +36,7 @@
 - `DATABASE_URL` — строка подключения PostgreSQL (asyncpg).
 - `API_HOST`, `API_PORT` — адрес/порт API.
 - `CHECKER_CONCURRENCY`, `POLL_INTERVAL_SEC`, `LEASE_TIMEOUT_SEC`, `FETCH_BATCH_SIZE` — параметры worker.
-- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PARSE_MODE` — для TelegramNotifier.
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_PARSE_MODE` — для TelegramNotifier. Подписки пользователей хранятся в БД (командами бота `/start`/`/subscribe`/`/unsubscribe`).
 
 ## Запуск
 - Применить миграции: `alembic upgrade head` (нужен `DATABASE_URL`).
@@ -60,7 +60,8 @@
 - Инцидент открывается при первом DOWN (если нет открытого), обновляется при следующих DOWN, закрывается при UP (end_ts, resolved=true).
 
 ## Алерты
-- Реализован `AlertSender` и `TelegramNotifier` (HTTP API Telegram). Отправка сообщений из worker в текущей версии не подключена.
+- Реализован `AlertSender` и `TelegramNotifier` (HTTP API Telegram). Подписки пользователей хранятся в таблице `notification_channels` (type=`telegram`).
+- Бот поддерживает команды `/start` и `/subscribe` для подписки, `/unsubscribe` для отписки. Добавлен webhook-роутер в API: `POST /telegram/webhook` — требуется настроить webhook в Telegram на этот URL или запустить polling proxy.
 
 ## Ограничения текущей реализации
 - Нет аутентификации/авторизации в API и UI.

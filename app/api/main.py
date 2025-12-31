@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.routers import health, incidents, metrics, sites, ui, admin
+from app.api.routers.telegram import router as telegram_router
 from app.api.dependencies import get_db_session
 
 app = FastAPI(title="Uptime Monitoring API")
@@ -14,6 +15,7 @@ app.include_router(metrics.router)
 app.include_router(ui.router)
 app.include_router(admin.router)
 app.include_router(health.router)
+app.include_router(telegram_router)
 
 
 @app.get("/", include_in_schema=False)
