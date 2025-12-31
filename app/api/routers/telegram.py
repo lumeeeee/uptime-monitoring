@@ -172,7 +172,7 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
                 lines.append(f"{t.name} — no checks yet")
             else:
                 latency = f"{last.latency_ms}ms" if last.latency_ms is not None else "-"
-                checked = last.checked_at.isoformat()
+                checked = last.checked_at.strftime("%d.%m.%Y %H:%M:%S")
                 lines.append(f"{t.name} — {last.status.value} — {latency} — {checked}")
 
         if not lines:
