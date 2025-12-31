@@ -15,6 +15,8 @@ from app.core.config import settings
 from app.db.models import CheckResult, Incident, SchedulerState, Status, Target
 from app.db.session import SessionLocal
 from app.services.checker import CheckRequest, CheckResultDTO, Checker
+from app.alerts.telegram import TelegramNotifier
+from app.alerts.base import AlertEvent
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +48,12 @@ class MonitoringWorker:
         self._checker = checker or Checker()
         self._worker_id = f"worker-{uuid.uuid4()}"
         self._semaphore = asyncio.Semaphore(settings.checker_concurrency)
+        self._alert_sender: TelegramNotifier | None = None
+        if settings.telegram_bot_token and settings.telegram_chat_id:
+            try:
+                self._alert_sender = TelegramNotifier()
+            except Exception:
+                logger.exception("failed to init TelegramNotifier")
 
     async def run_forever(self) -> None:
         await self._ensure_scheduler_entries()
@@ -140,6 +148,7 @@ class MonitoringWorker:
         return await self._checker.check(req)
 
     async def _persist_result(self, scheduler_id: uuid.UUID, result: CheckResultDTO) -> None:
+        event: AlertEvent | None = None
         async with self._session_factory() as session:
             async with session.begin():
                 # Lock only the scheduler_state row. joinedload() causes an outer join
@@ -166,40 +175,68 @@ class MonitoringWorker:
                 )
                 session.add(check_row)
 
-                await self._update_incident(session, target.id, result)
+                event = await self._update_incident(session, target.id, result, target)
 
                 state.next_run_at = result.checked_at + timedelta(seconds=target.check_interval_sec)
                 state.lease_owner = None
                 state.lease_expires_at = None
-
+        # After DB transaction commit, send notification (if any)
+        if event and self._alert_sender:
+            try:
+                await self._alert_sender.send(event)
+            except Exception:
+                logger.exception("alert send failed", extra={"target_id": str(event.target_id)})
     async def _update_incident(
-        self, session: AsyncSession, target_id: uuid.UUID, result: CheckResultDTO
-    ) -> None:
+        self, session: AsyncSession, target_id: uuid.UUID, result: CheckResultDTO, target: Target
+    ) -> AlertEvent | None:
         open_incident = await session.scalar(
             select(Incident)
             .where(Incident.target_id == target_id, Incident.resolved.is_(False))
             .options(noload(Incident.target))
             .with_for_update(of=Incident, skip_locked=True)
         )
-
+        # Build AlertEvent when an incident is opened or closed
         if result.status == Status.DOWN:
             if open_incident is None:
-                session.add(
-                    Incident(
-                        target_id=target_id,
-                        start_ts=result.checked_at,
-                        end_ts=None,
-                        last_status=Status.DOWN,
-                        resolved=False,
-                    )
+                incident = Incident(
+                    target_id=target_id,
+                    start_ts=result.checked_at,
+                    end_ts=None,
+                    last_status=Status.DOWN,
+                    resolved=False,
+                )
+                session.add(incident)
+                # notify about new incident
+                return AlertEvent(
+                    target_id=target_id,
+                    target_name=target.name,
+                    url=target.url,
+                    status=Status.DOWN,
+                    previous_status=None,
+                    incident_id=None,
+                    checked_at=result.checked_at,
+                    started_at=result.checked_at,
                 )
             else:
                 open_incident.last_status = Status.DOWN
+                return None
         else:
             if open_incident is not None:
                 open_incident.end_ts = result.checked_at
                 open_incident.last_status = Status.UP
                 open_incident.resolved = True
+                return AlertEvent(
+                    target_id=target_id,
+                    target_name=target.name,
+                    url=target.url,
+                    status=Status.UP,
+                    previous_status=Status.DOWN,
+                    incident_id=open_incident.id,
+                    checked_at=result.checked_at,
+                    started_at=open_incident.start_ts,
+                    ended_at=result.checked_at,
+                )
+        return None
 
 
 def main() -> None:
