@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import httpx
+from datetime import datetime, timezone, timedelta
+import re
 
 from app.api.dependencies import get_db_session
 from app.core.config import settings
@@ -76,6 +78,117 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             async with httpx.AsyncClient() as client:
                 await client.post(url, json={"chat_id": chat_id, "text": msg})
 
+    # /pause [duration] - pause notifications for a duration (e.g. 30m, 1h, 1d)
+    if cmd == "/pause":
+        parts = text.split()
+        dur = "1h"
+        if len(parts) >= 2:
+            dur = parts[1]
+
+        m = re.match(r"^(\d+)([smhd])$", dur)
+        if not m:
+            msg = "Неверный формат длительности. Используйте, например: 30m, 1h, 1d"
+            if settings.telegram_bot_token:
+                url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+                async with httpx.AsyncClient() as client:
+                    await client.post(url, json={"chat_id": chat_id, "text": msg})
+            return Response(status_code=200)
+
+        qty = int(m.group(1))
+        unit = m.group(2)
+        seconds = qty * (1 if unit == "s" else 60 if unit == "m" else 3600 if unit == "h" else 86400)
+        until = datetime.now(timezone.utc) + timedelta(seconds=seconds)
+
+        # find or create channel
+        rows = await session.scalars(
+            select(NotificationChannel).where(NotificationChannel.type == "telegram")
+        )
+        found = None
+        for ch in rows.all():
+            if str(ch.config.get("chat_id")) == str(chat_id):
+                found = ch
+                break
+        if not found:
+            cfg = {"chat_id": str(chat_id), "username": username}
+            cfg.setdefault("include_incident_id", True)
+            cfg.setdefault("include_checked_at", True)
+            cfg.setdefault("parse_mode", settings.telegram_parse_mode)
+            found = NotificationChannel(type="telegram", config=cfg, is_active=True)
+            session.add(found)
+
+        cfg = found.config or {}
+        cfg["paused_until"] = until.isoformat()
+        found.config = cfg
+        await session.commit()
+        msg = f"Уведомления приостановлены до {until.isoformat()} (UTC)."
+        if settings.telegram_bot_token:
+            url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json={"chat_id": chat_id, "text": msg})
+        return Response(status_code=200)
+
+    # /resume - resume notifications immediately
+    if cmd == "/resume":
+        rows = await session.scalars(
+            select(NotificationChannel).where(NotificationChannel.type == "telegram")
+        )
+        found = None
+        for ch in rows.all():
+            if str(ch.config.get("chat_id")) == str(chat_id):
+                found = ch
+                break
+        if not found:
+            msg = "Вы не подписаны. Отправьте /start чтобы подписаться."
+        else:
+            cfg = found.config or {}
+            if "paused_until" in cfg:
+                cfg.pop("paused_until")
+            found.config = cfg
+            await session.commit()
+            msg = "Уведомления возобновлены."
+
+        if settings.telegram_bot_token:
+            url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json={"chat_id": chat_id, "text": msg})
+        return Response(status_code=200)
+
+    # /status - show subscription and pause status
+    if cmd == "/status":
+        rows = await session.scalars(
+            select(NotificationChannel).where(NotificationChannel.type == "telegram")
+        )
+        found = None
+        for ch in rows.all():
+            if str(ch.config.get("chat_id")) == str(chat_id):
+                found = ch
+                break
+        if not found:
+            msg = "Вы не подписаны. Отправьте /start чтобы подписаться."
+        else:
+            cfg = found.config or {}
+            paused = cfg.get("paused_until")
+            if paused:
+                try:
+                    pu = datetime.fromisoformat(paused)
+                    now = datetime.now(timezone.utc)
+                    if pu > now:
+                        remaining = pu - now
+                        mins = int(remaining.total_seconds() // 60)
+                        msg = f"Подписка активна. Приостановлена до {pu.isoformat()} (примерно {mins} минут)."
+                    else:
+                        msg = "Подписка активна. Режим приостановки истёк."
+                except Exception:
+                    msg = f"Подписка активна. paused_until: {paused}"
+            else:
+                msg = "Подписка активна. Уведомления включены."
+
+        if settings.telegram_bot_token:
+            url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json={"chat_id": chat_id, "text": msg})
+        return Response(status_code=200)
+
     # Additional commands
     if cmd == "/help":
         help_text = (
@@ -121,6 +234,8 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
                 example = (
                     "Примеры использования:\n"
                     "/settings incident_id on — показывать номер инцидента\n"
+                    "/settings incident_id off — не показывать номер инцидента\n"
+                    "/settings checked_at on — показывать время проверки\n"
                     "/settings checked_at off — не показывать время проверки\n"
                     "/settings parse_mode Markdown — форматировать сообщения как Markdown\n"
                 )
