@@ -65,7 +65,7 @@ class TelegramNotifier(AlertSender):
         if event.started_at or event.ended_at:
             start = event.started_at.isoformat() if event.started_at else "?"
             end = event.ended_at.isoformat() if event.ended_at else "?"
-            window = f"\nИнтервал активности: {start} → {end}"
+            window = f"\nВремя начала и окончания: {start} → {end}"
         checked = f"\nВремя проверки: {event.checked_at.isoformat()}"
         return (
             f"Site: {event.target_name}\n"

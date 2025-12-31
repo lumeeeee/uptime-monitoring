@@ -76,4 +76,76 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             async with httpx.AsyncClient() as client:
                 await client.post(url, json={"chat_id": chat_id, "text": msg})
 
+    # Additional commands
+    if cmd == "/help":
+        help_text = (
+            "Доступные команды:\n"
+            "/help — показать эту справку\n"
+            "/ping — проверить, отвечает ли бот\n"
+            "/subscribe или /start — подписаться на уведомления\n"
+            "/unsubscribe — отписаться от уведомлений\n"
+            "/settings — показать настройки уведомлений\n"
+            "Для изменения настроек: /settings parse_mode <Markdown|HTML>"
+        )
+        if settings.telegram_bot_token:
+            url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json={"chat_id": chat_id, "text": help_text})
+        return Response(status_code=200)
+
+    if cmd == "/ping":
+        pong = "pong"
+        if settings.telegram_bot_token:
+            url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+            async with httpx.AsyncClient() as client:
+                await client.post(url, json={"chat_id": chat_id, "text": pong})
+        return Response(status_code=200)
+
+    if cmd == "/settings":
+        parts = text.split()
+        # find or create channel row for this chat
+        rows = await session.scalars(
+            select(NotificationChannel).where(NotificationChannel.type == "telegram")
+        )
+        found = None
+        for ch in rows.all():
+            if str(ch.config.get("chat_id")) == str(chat_id):
+                found = ch
+                break
+
+        if len(parts) == 1:
+            # show settings
+            if found:
+                cfg = found.config or {}
+                cfg_text = "\n".join(f"{k}: {v}" for k, v in cfg.items()) if cfg else "(по умолчанию)"
+                msg = f"Ваши настройки:\n{cfg_text}"
+            else:
+                msg = "Вы не подписаны. Отправьте /start чтобы подписаться."
+            if settings.telegram_bot_token:
+                url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+                async with httpx.AsyncClient() as client:
+                    await client.post(url, json={"chat_id": chat_id, "text": msg})
+            return Response(status_code=200)
+
+        # handle settings change: e.g. /settings parse_mode Markdown
+        if len(parts) >= 3 and parts[1].lower() == "parse_mode":
+            val = parts[2]
+            if not found:
+                # create channel row if missing
+                nc = NotificationChannel(type="telegram", config={"chat_id": str(chat_id), "parse_mode": val}, is_active=True)
+                session.add(nc)
+                await session.commit()
+                msg = f"Настройка parse_mode установлена: {val}"
+            else:
+                cfg = found.config or {}
+                cfg["parse_mode"] = val
+                found.config = cfg
+                await session.commit()
+                msg = f"Настройка parse_mode обновлена: {val}"
+            if settings.telegram_bot_token:
+                url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
+                async with httpx.AsyncClient() as client:
+                    await client.post(url, json={"chat_id": chat_id, "text": msg})
+            return Response(status_code=200)
+
     return Response(status_code=200)
