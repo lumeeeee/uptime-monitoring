@@ -43,7 +43,7 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
         if found:
             if not found.is_active:
                 found.is_active = True
-            msg = "Вы подписаны на уведомления."
+            msg = "🔔 Вы подписаны на уведомления."
         else:
             nc = NotificationChannel(type="telegram", config={"chat_id": str(chat_id), "username": username}, is_active=True)
             session.add(nc)
@@ -67,7 +67,7 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
                 removed = True
         if removed:
             await session.commit()
-            msg = "Вы отписаны от уведомлений."
+            msg = "🔕Вы отписаны от уведомлений."
         else:
             msg = "Вы не были подписаны."
 
