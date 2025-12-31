@@ -20,22 +20,23 @@ class TelegramNotifier(AlertSender):
         self._parse_mode = settings.telegram_parse_mode
 
     async def send(self, event: AlertEvent) -> None:
-        text = self._format_message(event)
         url = f"https://api.telegram.org/bot{self._token}/sendMessage"
 
-        async def _post(chat_id: str) -> None:
+        async def _post(chat_id: str, text: str, parse_mode: str | None) -> None:
             payload = {
                 "chat_id": chat_id,
                 "text": text,
-                "parse_mode": self._parse_mode,
                 "disable_web_page_preview": True,
             }
+            if parse_mode:
+                payload["parse_mode"] = parse_mode
             resp = await self._client.post(url, json=payload)
             resp.raise_for_status()
 
         # If explicit chat_id provided in settings, send only there (legacy)
         if self._chat_id:
-            await _post(self._chat_id)
+            text = self._format_message(event, include_incident_id=True, include_checked_at=True)
+            await _post(self._chat_id, text, self._parse_mode)
             return
 
         # Otherwise send to all active NotificationChannel entries of type 'telegram'
@@ -49,24 +50,34 @@ class TelegramNotifier(AlertSender):
             channels = rows.all()
             for ch in channels:
                 chat = ch.config.get("chat_id")
-                if chat:
-                    try:
-                        await _post(str(chat))
-                    except Exception:
-                        # swallow per-channel errors; caller should log if needed
-                        continue
+                if not chat:
+                    continue
+                cfg = ch.config or {}
+                include_incident = bool(cfg.get("include_incident_id", True))
+                include_checked = bool(cfg.get("include_checked_at", True))
+                parse_mode = cfg.get("parse_mode") or self._parse_mode
+                text = self._format_message(event, include_incident_id=include_incident, include_checked_at=include_checked)
+                try:
+                    await _post(str(chat), text, parse_mode)
+                except Exception:
+                    # swallow per-channel errors; caller should log if needed
+                    continue
 
-    def _format_message(self, event: AlertEvent) -> str:
+    def _format_message(self, event: AlertEvent, include_incident_id: bool = True, include_checked_at: bool = True) -> str:
         status_line = f"Статус: {event.status.value}"
         prev = f" (предыдущий: {event.previous_status.value})" if event.previous_status else ""
-        incident = f"\nИнцидент: {event.incident_id}" if event.incident_id else ""
+        incident = ""
+        if include_incident_id and event.incident_id:
+            incident = f"\nИнцидент: {event.incident_id}"
         err = f"\nОшибка: {event.error}" if event.error else ""
         window = ""
         if event.started_at or event.ended_at:
             start = event.started_at.isoformat() if event.started_at else "?"
             end = event.ended_at.isoformat() if event.ended_at else "?"
             window = f"\nВремя начала и окончания: {start} → {end}"
-        checked = f"\nВремя проверки: {event.checked_at.isoformat()}"
+        checked = ""
+        if include_checked_at:
+            checked = f"\nВремя проверки: {event.checked_at.isoformat()}"
         return (
             f"Site: {event.target_name}\n"
             f"URL: {event.url}\n"

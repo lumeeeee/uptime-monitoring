@@ -94,7 +94,7 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
         return Response(status_code=200)
 
     if cmd == "/ping":
-        pong = "pong"
+        pong = "Мониторинг доступен"
         if settings.telegram_bot_token:
             url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
             async with httpx.AsyncClient() as client:
@@ -128,20 +128,43 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             return Response(status_code=200)
 
         # handle settings change: e.g. /settings parse_mode Markdown
-        if len(parts) >= 3 and parts[1].lower() == "parse_mode":
-            val = parts[2]
+        # handle settings change: parse_mode or toggles for incident_id/checked_at
+        if len(parts) >= 3:
+            key = parts[1].lower()
+            val = parts[2].lower()
+            if val not in ("on", "off"):
+                # only accept on/off for these settings
+                return Response(status_code=200)
+
+            on = val == "on"
+
             if not found:
-                # create channel row if missing
-                nc = NotificationChannel(type="telegram", config={"chat_id": str(chat_id), "parse_mode": val}, is_active=True)
+                cfg = {"chat_id": str(chat_id), "username": username}
+                # set default flags
+                cfg.setdefault("include_incident_id", True)
+                cfg.setdefault("include_checked_at", True)
+                cfg.setdefault("parse_mode", settings.telegram_parse_mode)
+                nc = NotificationChannel(type="telegram", config=cfg, is_active=True)
                 session.add(nc)
-                await session.commit()
-                msg = f"Настройка parse_mode установлена: {val}"
+                found = nc
+
+            cfg = found.config or {}
+            if key == "parse_mode":
+                # allow explicit parse_mode values
+                cfg["parse_mode"] = parts[2]
+                msg = f"Настройка parse_mode обновлена: {parts[2]}"
+            elif key in ("incident_id", "include_incident_id"):
+                cfg["include_incident_id"] = on
+                msg = f"Показывать номер инцидента: { 'вкл' if on else 'выкл' }"
+            elif key in ("checked_at", "include_checked_at"):
+                cfg["include_checked_at"] = on
+                msg = f"Показывать время проверки: { 'вкл' if on else 'выкл' }"
             else:
-                cfg = found.config or {}
-                cfg["parse_mode"] = val
-                found.config = cfg
-                await session.commit()
-                msg = f"Настройка parse_mode обновлена: {val}"
+                # unknown key
+                return Response(status_code=200)
+
+            found.config = cfg
+            await session.commit()
             if settings.telegram_bot_token:
                 url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
                 async with httpx.AsyncClient() as client:
