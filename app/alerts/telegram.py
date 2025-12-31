@@ -57,16 +57,16 @@ class TelegramNotifier(AlertSender):
                         continue
 
     def _format_message(self, event: AlertEvent) -> str:
-        status_line = f"Status: {event.status.value}"
-        prev = f" (prev: {event.previous_status.value})" if event.previous_status else ""
-        incident = f"\nIncident: {event.incident_id}" if event.incident_id else ""
-        err = f"\nError: {event.error}" if event.error else ""
+        status_line = f"Статус: {event.status.value}"
+        prev = f" (предыдущий: {event.previous_status.value})" if event.previous_status else ""
+        incident = f"\nИнцидент: {event.incident_id}" if event.incident_id else ""
+        err = f"\nОшибка: {event.error}" if event.error else ""
         window = ""
         if event.started_at or event.ended_at:
             start = event.started_at.isoformat() if event.started_at else "?"
             end = event.ended_at.isoformat() if event.ended_at else "?"
-            window = f"\nWindow: {start} → {end}"
-        checked = f"\nChecked at: {event.checked_at.isoformat()}"
+            window = f"\nИнтервал активности: {start} → {end}"
+        checked = f"\nВремя проверки: {event.checked_at.isoformat()}"
         return (
             f"Site: {event.target_name}\n"
             f"URL: {event.url}\n"
