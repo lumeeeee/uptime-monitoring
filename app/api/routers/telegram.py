@@ -153,35 +153,32 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
                 await client.post(url, json={"chat_id": chat_id, "text": msg})
         return Response(status_code=200)
 
-    # /status - show subscription and pause status
+    # /status - show short summary for all monitored sites
     if cmd == "/status":
-        rows = await session.scalars(
-            select(NotificationChannel).where(NotificationChannel.type == "telegram")
-        )
-        found = None
-        for ch in rows.all():
-            if str(ch.config.get("chat_id")) == str(chat_id):
-                found = ch
-                break
-        if not found:
-            msg = "Вы не подписаны. Отправьте /start чтобы подписаться."
-        else:
-            cfg = found.config or {}
-            paused = cfg.get("paused_until")
-            if paused:
-                try:
-                    pu = datetime.fromisoformat(paused)
-                    now = datetime.now(timezone.utc)
-                    if pu > now:
-                        remaining = pu - now
-                        mins = int(remaining.total_seconds() // 60)
-                        msg = f"Подписка активна. Приостановлена до {pu.isoformat()} (примерно {mins} минут)."
-                    else:
-                        msg = "Подписка активна. Режим приостановки истёк."
-                except Exception:
-                    msg = f"Подписка активна. paused_until: {paused}"
+        from app.db.models import Target, CheckResult
+
+        targets = await session.scalars(select(Target).where(Target.is_active.is_(True)))
+        rows = targets.all()
+
+        lines: list[str] = []
+        for t in rows:
+            last = await session.scalar(
+                select(CheckResult)
+                .where(CheckResult.target_id == t.id)
+                .order_by(CheckResult.checked_at.desc())
+                .limit(1)
+            )
+            if last is None:
+                lines.append(f"{t.name} — no checks yet")
             else:
-                msg = "Подписка активна. Уведомления включены."
+                latency = f"{last.latency_ms}ms" if last.latency_ms is not None else "-"
+                checked = last.checked_at.isoformat()
+                lines.append(f"{t.name} — {last.status.value} — {latency} — {checked}")
+
+        if not lines:
+            msg = "Нет активных сайтов для мониторинга."
+        else:
+            msg = "Краткая сводка по сайтам:\n" + "\n".join(lines)
 
         if settings.telegram_bot_token:
             url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
