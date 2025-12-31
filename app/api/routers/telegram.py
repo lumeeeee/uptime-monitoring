@@ -173,7 +173,9 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             else:
                 latency = f"{last.latency_ms}ms" if last.latency_ms is not None else "-"
                 checked = last.checked_at.strftime("%d.%m.%Y %H:%M:%S")
-                lines.append(f"{t.name} — {last.status.value} — {latency} — {checked}")
+                status_map = {"UP": "Доступен", "DOWN": "Недоступен"}
+                status_text = status_map.get(last.status.value, last.status.value)
+                lines.append(f"{t.name} — {status_text} — {latency} — {checked}")
 
         if not lines:
             msg = "Нет активных сайтов для мониторинга."
