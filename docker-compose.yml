@@ -38,7 +38,7 @@ services:
       dockerfile: Dockerfile.worker
     environment:
       DATABASE_URL: postgresql+asyncpg://uptime:secret@db:5432/uptime
-      CHECKER_CONCURRENCY: 20
+      CHECKER_CONCURRENCY: 5
       POLL_INTERVAL_SEC: 1.0
       LEASE_TIMEOUT_SEC: 30.0
       FETCH_BATCH_SIZE: 100
