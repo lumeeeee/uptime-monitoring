@@ -120,7 +120,11 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
         cfg["paused_until"] = until.isoformat()
         found.config = cfg
         await session.commit()
-        msg = f"Уведомления приостановлены до {until.isoformat()} (UTC)."
+        # convert to UTC+3 for human-readable message
+        tz_local = timezone(timedelta(hours=3))
+        until_local = until.astimezone(tz_local)
+        formatted = until_local.strftime("%d.%m.%Y %H:%M:%S")
+        msg = f"Уведомления приостановлены до {formatted} (UTC+3)."
         if settings.telegram_bot_token:
             url = f"https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage"
             async with httpx.AsyncClient() as client:
@@ -172,7 +176,8 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
                 lines.append(f"{t.name} — no checks yet")
             else:
                 latency = f"{last.latency_ms}ms" if last.latency_ms is not None else "-"
-                checked = last.checked_at.strftime("%d.%m.%Y %H:%M:%S")
+                # show checked time in UTC+3 human-readable format
+                checked = last.checked_at.astimezone(timezone(timedelta(hours=3))).strftime("%d.%m.%Y %H:%M:%S")
                 status_map = {"UP": "Доступен", "DOWN": "Недоступен"}
                 status_text = status_map.get(last.status.value, last.status.value)
                 lines.append(f"{t.name} — {status_text} — {latency} — {checked}")
@@ -229,7 +234,19 @@ async def telegram_webhook(request: Request, session: AsyncSession = Depends(get
             # show settings
             if found:
                 cfg = found.config or {}
-                cfg_text = "\n".join(f"{k}: {v}" for k, v in cfg.items()) if cfg else "(по умолчанию)"
+                # format paused_until as human-readable UTC+3 if present
+                parts_list: list[str] = []
+                for k, v in (cfg.items() if cfg else []):
+                    if k == "paused_until" and isinstance(v, str):
+                        try:
+                            dt = datetime.fromisoformat(v)
+                            dt_local = dt.astimezone(timezone(timedelta(hours=3)))
+                            parts_list.append(f"{k}: {dt_local.strftime('%d.%m.%Y %H:%M:%S')} (UTC+3)")
+                            continue
+                        except Exception:
+                            pass
+                    parts_list.append(f"{k}: {v}")
+                cfg_text = "\n".join(parts_list) if parts_list else "(по умолчанию)"
                 example = (
                     "Примеры использования:\n"
                     "/settings incident_id on — показывать номер инцидента\n"
