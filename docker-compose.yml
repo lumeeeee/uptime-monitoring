@@ -51,17 +51,7 @@ services:
       - db
     # wait for TCP port 5432 on host 'db' before starting the worker process
     command: >
-      sh -c "python - <<'PY'
-      import socket, time
-      while True:
-        try:
-          s = socket.create_connection(('db', 5432), timeout=1)
-          s.close()
-          break
-        except Exception:
-          time.sleep(1)
-      PY
-      ; exec python -m app.workers.runner"
+      sh -c 'until python -c "import socket, time; s=socket.socket(); s.settimeout(1); s.connect((\"db\",5432)); s.close()"; do sleep 1; done; exec python -m app.workers.runner'
 
 volumes:
   pgdata:
