@@ -48,8 +48,20 @@ services:
     env_file:
       - .env
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+    # wait for TCP port 5432 on host 'db' before starting the worker process
+    command: >
+      sh -c "python - <<'PY'
+import socket, time
+while True:
+    try:
+        s = socket.create_connection(('db', 5432), timeout=1)
+        s.close()
+        break
+    except Exception:
+        time.sleep(1)
+PY
+; exec python -m app.workers.runner"
 
 volumes:
   pgdata:
