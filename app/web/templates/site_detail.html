@@ -130,9 +130,9 @@
           <div class="value">
             {% if metrics.sla_target_per_mille is not none and metrics.availability is not none %}
               {{ metrics.sla_target_per_mille / 10 }}% {% if metrics.sla_met %}
-                <span class="pill" title="Норма" style="padding:6px; border-radius:50%; width:12px; height:12px; display:inline-block; background:var(--up); box-shadow:0 2px 6px rgba(0,0,0,0.25);"></span>
+                <span class="pill" title="Норма" style="padding:3px; border-radius:50%; width:6px; height:6px; display:inline-block; background:var(--up); box-shadow:0 1px 3px rgba(0,0,0,0.25);"></span>
               {% else %}
-                <span class="pill" title="Нарушение" style="padding:6px; border-radius:50%; width:12px; height:12px; display:inline-block; background:var(--down); box-shadow:0 2px 6px rgba(0,0,0,0.25);"></span>
+                <span class="pill" title="Нарушение" style="padding:3px; border-radius:50%; width:6px; height:6px; display:inline-block; background:var(--down); box-shadow:0 1px 3px rgba(0,0,0,0.25);"></span>
               {% endif %}
             {% else %}N/A{% endif %}
           </div>
