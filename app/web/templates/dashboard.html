@@ -178,5 +178,36 @@
       });
     })();
   </script>
+  <!-- Worker status widget -->
+  <div id="worker-status" style="position:fixed;bottom:18px;right:18px; z-index:80; display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background: rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.04); color:var(--text); font-weight:700;">
+    <span id="worker-dot" style="width:12px;height:12px;border-radius:50%;background:var(--down);display:inline-block;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></span>
+    <span style="font-size:13px;">Monitoring Status</span>
+  </div>
+  <script>
+    (function(){
+      const dot = document.getElementById('worker-dot');
+      const container = document.getElementById('worker-status');
+      if(!dot) return;
+      async function update(){
+        try{
+          const res = await fetch('/worker-status');
+          if(!res.ok) throw new Error('http');
+          const js = await res.json();
+          if(js.status === 'online'){
+            dot.style.background = 'var(--up)';
+            container.title = `Online — last: ${js.last_check}`;
+          } else {
+            dot.style.background = 'var(--down)';
+            container.title = js.last_check ? `Offline — last: ${js.last_check}` : 'Offline — no checks yet';
+          }
+        }catch(e){
+          dot.style.background = 'var(--down)';
+          container.title = 'Unknown (fetch failed)';
+        }
+      }
+      update();
+      setInterval(update, 30000);
+    })();
+  </script>
 </body>
 </html>
