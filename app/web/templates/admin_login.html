@@ -11,90 +11,38 @@
       --panel: #0b1220;
       --surface: rgba(255,255,255,0.02);
       --text: #e5e7eb;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-strong: #0ea5e9;
-      --border: #0a0f1a;
-      --radius: 14px;
-      --sidebar-w: 260px;
-      --sidebar-border: #0a0f1a;
-    }
-    body { font-family: 'Space Grotesk','Inter',system-ui,sans-serif; margin: 0; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), transparent 32%), radial-gradient(circle at 80% 0%, rgba(14,165,233,0.1), transparent 30%), var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
-    .shell { width: 380px; background: linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; box-shadow: 0 18px 50px rgba(0,0,0,0.35); position: relative; overflow: hidden; }
-    .sidebar { position: fixed; inset:0 auto 0 0; width: var(--sidebar-w); background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(11,18,32,0.98)); border-right:1px solid var(--sidebar-border); padding:24px 18px; box-shadow: 6px 0 30px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:16px; z-index:50; transform: translateX(-100%); transition: transform .25s ease; }
-    .sidebar .logo { font-weight:700; letter-spacing:-0.01em; display:flex; align-items:center; gap:10px; font-size:16px; }
-    .sidebar nav { display:flex; flex-direction:column; gap:6px; }
-    .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color: var(--text); text-decoration:none; border:1px solid transparent; transition: background .12s ease, border-color .12s ease; }
-    .nav-toggle { position: fixed; top:18px; left:18px; width:42px; height:42px; border-radius:12px; border:1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:60; box-shadow:0 10px 28px rgba(0,0,0,0.25); transition: left .25s ease; }
-    .sidebar-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); opacity:0; pointer-events:none; transition: opacity .2s ease; z-index:40; }
-    body.sidebar-open .sidebar-overlay { opacity:1; pointer-events:auto; }
-    body.sidebar-open .sidebar { transform: translateX(0); }
-    body.sidebar-open .nav-toggle { left: calc(var(--sidebar-w) + 18px); }
-    .shell::before{ content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.14), transparent 45%); opacity: 0.9; pointer-events: none; }
-    h2 { margin: 0; font-size: 24px; letter-spacing: -0.01em; }
-    p { margin: 6px 0 12px 0; color: var(--muted); }
-    label { display: block; font-weight: 600; margin-bottom: 6px; }
-    input { box-sizing: border-box; width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 14px; background: rgba(255,255,255,0.03); color: var(--text); }
-    button { width: 100%; padding: 12px; border: none; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #0b1220; font-weight: 700; cursor: pointer; box-shadow: 0 10px 30px rgba(56,189,248,0.25); transition: transform .1s ease, box-shadow .15s ease; }
-    button:hover { transform: translateY(-1px); box-shadow: 0 14px 36px rgba(56,189,248,0.35); }
-    .error { background: rgba(248,113,113,0.14); color: #fecdd3; border: 1px solid rgba(248,113,113,0.4); padding: 10px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; position: relative; z-index: 1; }
-    .theme-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 10px; cursor: pointer; }
-    .content { position: relative; z-index: 1; }
-    .links { display: flex; justify-content: space-between; margin-top: 12px; font-size: 14px; color: var(--muted); }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-  </style>
-</head>
-<body>
-  <button class="nav-toggle" aria-label="Меню" type="button">☰</button>
-  <div class="sidebar">
-    <div class="logo">🔭 Uptime</div>
-    <nav>
-      <a class="nav-link" data-path="/ui" href="/ui"><span>Панель</span></a>
-      <a class="nav-link" data-path="/ui/metrics" href="/ui/metrics"><span>Метрики</span></a>
-      <a class="nav-link" data-path="/admin/sites" href="/admin/sites"><span>Администрирование</span></a>
-    </nav>
-  </div>
-  <div class="sidebar-overlay"></div>
-  <div class="shell">
-    <div class="header">
-      <h2>Панель администрирования</h2>
-    </div>
-    <div class="content">
-      <p>Войдите, используя учётные данные администратора</p>
-      {% if error %}<div class="error">Неверное имя пользователя или пароль</div>{% endif %}
-      <form method="post" action="/admin/login">
-        <label for="username">Имя пользователя</label>
-        <input id="username" name="username" autocomplete="username" required />
-        <label for="password">Пароль</label>
-        <input id="password" type="password" name="password" autocomplete="current-password" required />
-        <button type="submit">Войти</button>
-      </form>
-      <div class="links">
-        <a href="/ui">Назад в панель</a>
-      </div>
-    </div>
-  </div>
-  
-  <script>
-    (function(){
-      const toggle = document.querySelector('.nav-toggle');
-      const overlay = document.querySelector('.sidebar-overlay');
-      const body = document.body;
-      const setOpen = (v) => { if(v) body.classList.add('sidebar-open'); else body.classList.remove('sidebar-open'); console.debug('sidebar-open set to', body.classList.contains('sidebar-open')); };
-      toggle?.addEventListener('click', () => setOpen(!body.classList.contains('sidebar-open')));
-      overlay?.addEventListener('click', () => setOpen(false));
-      window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') setOpen(false); });
-      const path = window.location.pathname;
-      document.querySelectorAll('.nav-link').forEach(link => {
-        const base = link.dataset.path;
-        if(path === base || path.startsWith(base + '/') || (base === '/ui' && (path === '/' || path === '/ui'))){
-          link.classList.add('active');
-        }
-      });
-    })();
-  </script>
+      {% extends "base.html" %}
 
-</body>
-</html>
+      {% block title %}Панель администрирования{% endblock %}
+
+      {% block head_extra %}
+        <style>
+          /* Page-specific override to center the login shell */
+          body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+          .shell { width:380px; background: linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border-radius: var(--radius); border:1px solid var(--border); padding:20px; box-shadow: 0 18px 50px rgba(0,0,0,0.35); position: relative; overflow: hidden; }
+          .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+          .error { background: rgba(248,113,113,0.14); color: #fecdd3; border: 1px solid rgba(248,113,113,0.4); padding: 10px; border-radius: 10px; margin-bottom: 12px; font-weight: 600; }
+        </style>
+      {% endblock %}
+
+      {% block content %}
+        <div class="shell">
+          <div class="header">
+            <h2>Панель администрирования</h2>
+          </div>
+          <div class="content">
+            <p>Войдите, используя учётные данные администратора</p>
+            {% if error %}<div class="error">Неверное имя пользователя или пароль</div>{% endif %}
+            <form method="post" action="/admin/login">
+              <label for="username">Имя пользователя</label>
+              <input id="username" name="username" autocomplete="username" required />
+              <label for="password">Пароль</label>
+              <input id="password" type="password" name="password" autocomplete="current-password" required />
+              <button type="submit">Войти</button>
+            </form>
+            <div class="links">
+              <a href="/ui">Назад в панель</a>
+            </div>
+          </div>
+        </div>
+      {% endblock %}

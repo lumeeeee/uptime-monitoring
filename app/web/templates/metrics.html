@@ -1,140 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'><text y='50%' x='50%' dominant-baseline='middle' text-anchor='middle' font-size='52'>📊</text></svg>">
-  <title>Metrics</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-    :root{
-      --bg: #0f172a;
-      --panel: #0b1220;
-      --surface: rgba(255,255,255,0.02);
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-strong: #0ea5e9;
-      --border: #0a0f1a;
-      --radius: 14px;
-      --sidebar-w: 260px;
-      --sidebar-bg: #0b1220;
-      --sidebar-border: #0a0f1a;
-    }
-    body{margin:0; padding:28px; padding-left: 32px; background: radial-gradient(circle at 18% 10%, rgba(56,189,248,0.08), transparent 30%), radial-gradient(circle at 82% 8%, rgba(14,165,233,0.1), transparent 32%), var(--bg); color: var(--text); font-family: 'Space Grotesk','Inter',system-ui,sans-serif; transition: padding-left .2s ease;}
-    body.sidebar-open { padding-left: calc(var(--sidebar-w) + 32px); }
-    .page{max-width:1200px;margin:0 auto;}
-    .sidebar { position: fixed; inset:0 auto 0 0; width: var(--sidebar-w); background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(11,18,32,0.98)); border-right:1px solid var(--sidebar-border); padding:24px 18px; box-shadow: 6px 0 30px rgba(0,0,0,0.28); display:flex; flex-direction:column; gap:16px; z-index:50; transform: translateX(-100%); transition: transform .25s ease; }
-    .sidebar .logo { font-weight:700; letter-spacing:-0.01em; display:flex; align-items:center; gap:10px; font-size:16px; }
-    .sidebar nav { display:flex; flex-direction:column; gap:6px; }
-    .sidebar nav a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; color: var(--text); text-decoration:none; border:1px solid transparent; transition: background .12s ease, border-color .12s ease; }
-    .sidebar nav a span { font-weight:600; font-size:14px; }
-    .sidebar nav a.active { background: rgba(56,189,248,0.12); border-color: rgba(56,189,248,0.35); color: var(--accent); }
-    .sidebar nav a:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
-    .nav-toggle { position: fixed; top:18px; left:18px; width:42px; height:42px; border-radius:12px; border:1px solid var(--border); background: rgba(255,255,255,0.04); color: var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:60; box-shadow:0 10px 28px rgba(0,0,0,0.25); transition: left .25s ease; }
-    .sidebar-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); opacity:0; pointer-events:none; transition: opacity .2s ease; z-index:40; }
-    body.sidebar-open .sidebar-overlay { opacity:1; pointer-events:auto; }
-    body.sidebar-open .sidebar { transform: translateX(0); }
-    body.sidebar-open .nav-toggle { left: calc(var(--sidebar-w) + 18px); }
-    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
-    h1{margin:0;font-size:26px;letter-spacing:-0.01em;}
-    .theme-toggle{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:12px;cursor:pointer;}
-    .row{display:flex;gap:18px;align-items:stretch;flex-wrap:wrap;}
-    .box{flex:1;min-width:320px; background: linear-gradient(150deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border:1px solid var(--border); border-radius: var(--radius); padding:16px; box-shadow: 0 14px 40px rgba(0,0,0,0.25); position:relative; overflow:hidden; }
-    .box::before{content:"";position:absolute;inset:0;background: radial-gradient(circle at 20% 15%, rgba(56,189,248,0.14), transparent 45%);opacity:0;transition:opacity .2s ease;pointer-events: none;}
-    .box:hover::before{opacity:1;}
-    .chart-holder{position:relative;width:100%;height:360px;margin-top:10px;}
-    canvas{position:absolute;inset:0;width:100% !important;height:100% !important}
-    .controls{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
-    select{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);}
-    .stats{display:grid;grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:14px;}
-    .stat{padding:12px; border:1px solid var(--border); border-radius:12px; background: rgba(255,255,255,0.02); display:flex; flex-direction:column; gap:6px;}
-    .stat .label{color:var(--muted); font-size:12px; letter-spacing:0.01em;}
-    .stat .value{font-weight:700; font-size:18px;}
-    .actions{display:flex; gap:10px; align-items:center;}
-    .btn{padding:10px 14px; border-radius:10px; border:1px solid var(--border); background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color:#0b1220; font-weight:700; text-decoration:none; box-shadow:0 10px 28px rgba(56,189,248,0.25); transition: transform .08s ease, box-shadow .12s ease;}
-    .btn:hover{transform: translateY(-1px); box-shadow:0 14px 34px rgba(56,189,248,0.32);}
-    .btn.ghost{background: transparent; color: var(--text); border-color: var(--border); box-shadow:none;}
-    .btn.ghost:hover{border-color: var(--accent); color: var(--text);}
-    @media(min-width:1025px){
-      body.sidebar-open { padding-left: calc(var(--sidebar-w) + 28px); }
-    }
-    @media(max-width:1024px){
-      body { padding-left:28px; }
-      .sidebar { transform: translateX(-100%); }
-    }
-    @media(max-width:900px){.row{flex-direction:column}}
-  </style>
+{% extends "base.html" %}
+
+{% block title %}Метрики{% endblock %}
+
+{% block head_extra %}
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <button class="nav-toggle" aria-label="Меню" type="button">☰</button>
-  <div class="sidebar">
-    <div class="logo">🔭 Uptime</div>
-    <nav>
-      <a class="nav-link" data-path="/ui" href="/ui"><span>Панель</span></a>
-      <a class="nav-link" data-path="/ui/metrics" href="/ui/metrics"><span>Метрики</span></a>
-      <a class="nav-link" data-path="/admin/sites" href="/admin/sites"><span>Администрирование</span></a>
-    </nav>
-  </div>
-  <div class="sidebar-overlay"></div>
-  <div class="page">
-    <div class="top">
-      <h1>Метрики</h1>
-      <div class="actions">
-        <a class="btn" href="/ui/metrics.csv">Экспорт CSV</a>
-        <a class="btn ghost" href="/ui/metrics.pdf">Экспорт PDF</a>
-      </div>
-    </div>
+{% endblock %}
 
-    <div class="row">
-      <div class="box">
-        <h3 style="margin:0;">Uptime (24ч) по каждому сайту</h3>
-        <div class="chart-holder"><canvas id="uptimeChart" width="600" height="360"></canvas></div>
-      </div>
-      <div class="box">
-        <div class="controls">
-          <h3 style="margin:0;">Недавние задержки</h3>
-          <select id="site-select"></select>
-        </div>
-        <div class="stats">
-          <div class="stat"><div class="label">p50</div><div class="value" id="p50">—</div></div>
-          <div class="stat"><div class="label">p95</div><div class="value" id="p95">—</div></div>
-          <div class="stat"><div class="label">p99</div><div class="value" id="p99">—</div></div>
-          <div class="stat"><div class="label">Частота ошибок</div><div class="value" id="err">—</div></div>
-        </div>
-        <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="box">
-        <h3 style="margin:0;">Частота ошибок (последние 100 проверок)</h3>
-        <div class="chart-holder"><canvas id="errorChart" width="600" height="360"></canvas></div>
-      </div>
+{% block content %}
+  <div class="top">
+    <h1>Метрики</h1>
+    <div class="actions">
+      <a class="btn" href="/ui/metrics.csv">Экспорт CSV</a>
+      <a class="btn ghost" href="/ui/metrics.pdf">Экспорт PDF</a>
     </div>
   </div>
 
-  <script>
-    (function(){
-      const toggle = document.querySelector('.nav-toggle');
-      const overlay = document.querySelector('.sidebar-overlay');
-      const body = document.body;
-      const setOpen = (v) => {
-        if(v) body.classList.add('sidebar-open'); else body.classList.remove('sidebar-open');
-        console.debug('sidebar-open set to', body.classList.contains('sidebar-open'));
-      };
-      toggle?.addEventListener('click', () => setOpen(!body.classList.contains('sidebar-open')));
-      overlay?.addEventListener('click', () => setOpen(false));
-      window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') setOpen(false); });
-      const path = window.location.pathname;
-      document.querySelectorAll('.nav-link').forEach(link => {
-        const base = link.dataset.path;
-        if(path === base || path.startsWith(base + '/') || (base === '/ui' && (path === '/' || path === '/ui'))){
-          link.classList.add('active');
-        }
-      });
-    })();
-  </script>
+  <div class="row">
+    <div class="box">
+      <h3 style="margin:0;">Uptime (24ч) по каждому сайту</h3>
+      <div class="chart-holder"><canvas id="uptimeChart" width="600" height="360"></canvas></div>
+    </div>
+    <div class="box">
+      <div class="controls">
+        <h3 style="margin:0;">Недавние задержки</h3>
+        <select id="site-select"></select>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="label">p50</div><div class="value" id="p50">—</div></div>
+        <div class="stat"><div class="label">p95</div><div class="value" id="p95">—</div></div>
+        <div class="stat"><div class="label">p99</div><div class="value" id="p99">—</div></div>
+        <div class="stat"><div class="label">Частота ошибок</div><div class="value" id="err">—</div></div>
+      </div>
+      <div class="chart-holder"><canvas id="latencyChart" width="600" height="360"></canvas></div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="box">
+      <h3 style="margin:0;">Частота ошибок (последние 100 проверок)</h3>
+      <div class="chart-holder"><canvas id="errorChart" width="600" height="360"></canvas></div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts_extra %}
   <script>
     const labels = {{ labels | tojson }};
     const uptimeValues = {{ uptime_values | tojson }};
@@ -241,36 +150,4 @@
       latencyChart.update();
     });
   </script>
-  <!-- Worker status widget -->
-  <div id="worker-status" style="position:fixed;bottom:18px;right:18px; z-index:80; display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background: rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.04); color:var(--text); font-weight:700;">
-    <span id="worker-dot" style="width:12px;height:12px;border-radius:50%;background:var(--down);display:inline-block;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></span>
-    <span style="font-size:13px;">Monitoring Status</span>
-  </div>
-  <script>
-    (function(){
-      const dot = document.getElementById('worker-dot');
-      const container = document.getElementById('worker-status');
-      if(!dot) return;
-      async function update(){
-        try{
-          const res = await fetch('/worker-status');
-          if(!res.ok) throw new Error('http');
-          const js = await res.json();
-          if(js.status === 'online'){
-            dot.style.background = 'var(--up)';
-            container.title = `Online — last: ${js.last_check}`;
-          } else {
-            dot.style.background = 'var(--down)';
-            container.title = js.last_check ? `Offline — last: ${js.last_check}` : 'Offline — no checks yet';
-          }
-        }catch(e){
-          dot.style.background = 'var(--down)';
-          container.title = 'Unknown (fetch failed)';
-        }
-      }
-      update();
-      setInterval(update, 30000);
-    })();
-  </script>
-</body>
-</html>
+{% endblock %}
