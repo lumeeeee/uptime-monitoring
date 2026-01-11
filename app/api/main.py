@@ -6,8 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.routers import health, incidents, metrics, sites, ui, admin
 from app.api.routers.telegram import router as telegram_router
 from app.api.dependencies import get_db_session
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Uptime Monitoring API")
+
+# Serve project static files (fonts, images, etc.) mounted at /static
+app.mount("/static", StaticFiles(directory="app/web/static"), name="static")
 
 app.include_router(sites.router)
 app.include_router(incidents.router)
